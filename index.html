@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RRHH Chascomús</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#004a7c">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="splash-content">
+            <img src="logo-chascomus.png" alt="Muni Chascomús" class="splash-logo">
+            <div class="loader-bar"><div class="loader-progress"></div></div>
+            <p>Cargando Portal de RRHH...</p>
+        </div>
+    </div>
+
+    <div class="header">
+        <img src="img-bot-normal.png" id="avatar-bot" alt="Bot">
+        <span>Asistente RRHH</span>
+        <button id="closeSessionBtn" onclick="clearSession()" title="Cerrar Sesión">🚪</button>
+    </div>
+
+    <div id="chatMessages" class="chat-container"></div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Escribí un mensaje..." autocomplete="off">
+        <button id="sendButton">➤</button>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Registro del Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('SW registrado correctamente'))
+                .catch(err => console.warn('Error al registrar SW:', err));
+        }
+    </script>
+</body>
+</html>
