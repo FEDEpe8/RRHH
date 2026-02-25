@@ -1262,4 +1262,39 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     cargarAgendaDinamica();
+    /* ==========================================================================
+   LÓGICA DE INSTALACIÓN PWA (ANDROID / PC)
+   ========================================================================== */
+let deferredPrompt; // Variable para guardar el evento de instalación
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // 1. Evitar que Chrome muestre el banner automático (que a veces falla)
+    e.preventDefault();
+    // 2. Guardar el evento para usarlo cuando toquen el botón
+    deferredPrompt = e;
+    // 3. Mostrar el botón de descarga en el header
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) {
+        installBtn.classList.remove('hidden');
+        
+        installBtn.addEventListener('click', async () => {
+            // Ocultamos el botón para que no lo toquen de nuevo
+            installBtn.classList.add('hidden');
+            // Mostramos el cartel nativo de instalación
+            deferredPrompt.prompt();
+            // Esperamos la decisión del usuario
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+        });
+    }
+});
+
+// Detectar si ya se instaló para felicitar al usuario (Opcional)
+window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    // Opcional: addMessage("✅ ¡Gracias por instalar la App!", "bot");
+    const installBtn = document.getElementById('installBtn');
+    if(installBtn) installBtn.classList.add('hidden');
+});
 });

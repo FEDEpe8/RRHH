@@ -26,12 +26,15 @@
         </div>
     </div>
 
-    <div class="header">
+ <div class="header">
         <div style="display: flex; align-items: center; gap: 10px;">
             <img src="img-bot-normal.png" id="avatar-bot" alt="Bot">
             <span>Asistente RRHH</span>
         </div>
-        <button id="closeSessionBtn" onclick="clearSession()" title="Cerrar Sesión">🚪</button>
+        <div style="display: flex; gap: 10px;">
+            <button id="installBtn" class="hidden" title="Instalar App">⬇️</button>
+            <button id="closeSessionBtn" onclick="clearSession()" title="Cerrar Sesión">🚪</button>
+        </div>
     </div>
 
     <div id="chatMessages" class="chat-container"></div>
