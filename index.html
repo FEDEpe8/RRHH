@@ -2,11 +2,18 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+    
     <title>RRHH Chascomús</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#004a7c">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RRHH Muni">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 </head>
 <body>
@@ -15,13 +22,15 @@
         <div class="splash-content">
             <img src="logo-chascomus.png" alt="Muni Chascomús" class="splash-logo">
             <div class="loader-bar"><div class="loader-progress"></div></div>
-            <p>Cargando Portal de RRHH...</p>
+            <p>Portal de Recursos Humanos</p>
         </div>
     </div>
 
     <div class="header">
-        <img src="img-bot-normal.png" id="avatar-bot" alt="Bot">
-        <span>Asistente RRHH</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="img-bot-normal.png" id="avatar-bot" alt="Bot">
+            <span>Asistente RRHH</span>
+        </div>
         <button id="closeSessionBtn" onclick="clearSession()" title="Cerrar Sesión">🚪</button>
     </div>
 
@@ -34,7 +43,6 @@
 
     <script src="script.js"></script>
     <script>
-        // Registro del Service Worker para PWA
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then(() => console.log('SW registrado correctamente'))
