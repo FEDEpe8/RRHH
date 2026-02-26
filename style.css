@@ -138,7 +138,36 @@ body {
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 } 
 
+/* --- Estilos para el nuevo botón de descarga --- */
+.install-btn {
+    background: #25D366; /* Verde tipo WhatsApp para que llame la atención */
+    border: none;
+    border-radius: 20px;
+    color: white;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Ajuste al avatar del header para que el logo cuadrado se vea bien en el círculo */
+#avatar-bot {
+    border-radius: 50%;
+    background: white;
+    padding: 2px;
+    box-sizing: border-box;
+}
+
 /* --- Typing --- */
 .typing-dots { display: inline-block; font-style: italic; color: #888; }
 .typing-dots::after { content: '...'; animation: ellipsis 1.5s infinite; display: inline-block; width: 1em; text-align: left; }
 @keyframes ellipsis { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+

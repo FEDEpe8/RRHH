@@ -4,27 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     
-    <title>RRHH Chascomús</title>
+    <title>ChasBot - Municipalidad</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#004a7c">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RRHH Muni">
-    <link rel="apple-touch-icon" href="icon-192.png">
-
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <meta name="apple-mobile-web-app-title" content="ChasBot">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="logo.png">
 </head>
 <body>
 
- <div class="header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <img src="icon-192.png" id="avatar-bot" alt="Bot">
-            <span>Asistente RRHH</span>
+    <div id="splash-screen">
+        <div style="text-align: center;">
+            <img src="logo.png" alt="Logo Chascomús" class="splash-logo" style="border-radius: 15px;">
+            <div class="loader-bar"><div class="loader-progress"></div></div>
+            <p style="color: var(--primary); font-weight: bold; font-family: sans-serif;">Cargando ChasBot...</p>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button id="installBtn" class="hidden" title="Instalar App">⬇️</button>
+    </div>
+
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="logo.png" id="avatar-bot" alt="Bot" style="object-fit: cover;">
+            <span>ChasBot</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="installBtn" class="hidden install-btn" title="Instalar App">📲 Descargar App</button>
             <button id="closeSessionBtn" onclick="clearSession()" title="Cerrar Sesión">🔄</button>
         </div>
     </div>

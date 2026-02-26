@@ -21,13 +21,12 @@ const MENUS = {
         
         ]
     },
-    menu_completo: {
+  menu_completo: {
         title: () => 'Todas las opciones disponibles:',
         options: [
-                { id : 'rrhh_menu', label: '🫱🏻‍🫲🏿 RRHH - Personal Municipal', type: 'submenu' },
-                { id : 'back', label: '⬅️ Volver al inicio' },
+            { id : 'rrhh_menu', label: '🫱🏻‍🫲🏿 RRHH - Personal Municipal' },
             { id: 'servicios_municipales', label: '🏛️ Servicios al Ciudadano' },
-            { id: 'back', label: '⬅️ Volver' }
+            { id : 'main', label: '🏠 Volver al inicio' }
         ]
     },
     servicios_municipales: {
@@ -983,23 +982,15 @@ const RES = {
 };
 
 // --- PALABRAS CLAVE (BUSCADOR INTELIGENTE) ---
-// --- PALABRAS CLAVE (BUSCADOR INTELIGENTE) ---
 const PALABRAS_CLAVE = {
-    // Llevan a submenús (usamos 'id')
-    'recibo': { id: 'sueldos_menu', label: '📄 Sección Sueldos' },
-    'extras': { id: 'sueldos_menu', label: '📄 Sección Sueldos' },
-    'liquidacion': { id: 'sueldos_menu', label: '📄 Sección Sueldos' },
-    'vacaciones': { id: 'licencias_menu', label: '📅 Vacaciones' }, // Corregido al menú de licencias
-    'rrhh': { id: 'main', label: '👥 Recursos Humanos' }, // Lo mandamos al inicio donde están las opciones
-    'licencia': { id: 'licencias_menu', label: '📅 Licencias' },
-    'beneficios': { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
-    'soy_municipal': { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
+    // Redirecciones a menús
+    'rrhh': { id: 'main', label: '👥 Recursos Humanos' },
     'habilitacion': { id: 'habilitaciones', label: '🏢 Habilitaciones' },
     '147': { id: 'obras', label: '📝 Reclamos 147' },
     'farmacia': { id: 'salud_menu', label: '💊 Farmacias' },
     'hospital': { id: 'hospital_menu', label: '🏥 Hospital' },
     
-    // Llevan directo a la tarjeta de información (usamos 'apiKey')
+    // Redirecciones directas a tarjetas (Respuestas finales)
     'tramite': { apiKey: 'hab_gral', label: '🏢 Habilitación Comercial' },
     'eventos': { apiKey: 'hab_eventos', label: '🎉 Eventos' },
     'espacio': { apiKey: 'hab_espacio', label: '🍔 Uso de Espacio Público' },
@@ -1016,26 +1007,25 @@ const PALABRAS_CLAVE = {
     'boleta': { apiKey: 'boleta', label: '📧 Boleta Digital' },
     'agua': { apiKey: 'agua', label: '💧 Consumo de Agua' },
     'deuda': { apiKey: 'deuda', label: '🔍 Consulta de Deuda' },
-    'recibo': { apiKey: 'recibo', label: '📄 Recibos de Sueldo' },
-    'extras': { apiKey: 'extras', label: '📄 Extras' },
-    'liquidacion': { apiKey: 'liquidacion', label: '📄 Liquidaciones' },
-    'vacaciones': { apiKey: 'vacaciones', label: '📅 Vacaciones' },
-    'licencia': { apiKey: 'licencia', label: '📅 Licencias' },
-    'beneficios': { apiKey: 'beneficios', label: '🎁 Beneficios Soy Municipal' },
-    'soy_municipal': { apiKey: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
+    'recibo': { apiKey: 'construccion', label: '📄 Recibos de Sueldo' },
+    'extras': { apiKey: 'construccion', label: '📄 Extras' },
+    'liquidacion': { apiKey: 'construccion', label: '📄 Liquidaciones' },
+    'vacaciones': { apiKey: 'construccion', label: '📅 Vacaciones' },
+    'licencia': { apiKey: 'info_licencias', label: '📅 Licencias' },
+    'beneficios': { apiKey: 'construccion', label: '🎁 Beneficios Soy Municipal' },
+    'soy_municipal': { apiKey: 'construccion', label: '🎁 Beneficios Soy Municipal' },
     'certificado': { apiKey: 'info_escolaridad', label: '🎒 Certificado Escolar' },
-    'familia': { apiKey: 'grupo_info', label: '👥 Grupo Familiar' },
+    'familia': { apiKey: 'construccion', label: '👥 Grupo Familiar' },
     'escolaridad': { apiKey: 'info_escolaridad', label: '🎒 Certificado Escolar' },
-    'carnet': { apiKey: 'carnet_trabajo', label: '🛂 Carnet de Trabajo' },
-    'sac': { apiKey: 'sac_info', label: '💰 SAC - Sueldo Anual Complementario' },
-    'antiguedad': { apiKey: 'antiguedad_info', label: '📆 Antigüedad Laboral' },
-    'grupo': { apiKey: 'grupo_info', label: '👥 Grupo familiar' },
+    'sac': { apiKey: 'construccion', label: '💰 SAC - Sueldo Anual Complementario' },
+    'antiguedad': { apiKey: 'construccion', label: '📆 Antigüedad Laboral' },
+    'grupo': { apiKey: 'construccion', label: '👥 Grupo familiar' },
     'manipulacion': { apiKey: 'res_manipulacion', label: '🔴 Carnet Manipulación Alimentos' },
     'deudas': { apiKey: 'consulta_tributaria', label: '💸 Consulta de Deudas' },
     'comprar': { apiKey: 'res_compre_chascomus', label: '🤝 Compre Chascomús' },
     'turismo': { apiKey: 'turismo_info', label: '🏖️ Turismo' },
     'deporte': { apiKey: 'deportes_info', label: '⚽ Deportes' },
-    'cultura': { apiKey: 'cultura_info', label: '🎭 Cultura' },
+    'cultura': { apiKey: 'agenda_dinamica', label: '🎭 Cultura' },
     'produccion': { apiKey: 'prod_contacto', label: '📍 Contacto Producción' },
     'empleo': { apiKey: 'res_oe_inscripcion', label: '📝 Inscripción Laboral' },
     'promover': { apiKey: 'res_oe_promover', label: '♿ Programa Promover' },
@@ -1044,9 +1034,7 @@ const PALABRAS_CLAVE = {
     'busqueda': { apiKey: 'res_empl_busqueda', label: '🔎 Búsqueda de Personal' },
     'madrinas': { apiKey: 'res_empl_madrinas', label: '🤝 Empresas Madrinas' },
     'contacto': { apiKey: 'contacto_gral', label: '🏛️ Contacto Municipalidad' },
-    'agenda': { apiKey: 'agenda_dinamica', label: '📅 Agenda Actualizada' },
-
-    
+    'agenda': { apiKey: 'agenda_dinamica', label: '📅 Agenda Actualizada' }
 };
 
 // --- FUNCIONES VISUALES ---
