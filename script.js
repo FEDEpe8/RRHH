@@ -8,8 +8,8 @@ let currentPath = ['main'];
 let isBotThinking = false;
 
 // --- CONSTANTES ---
-const IMG_BOT_NORMAL = 'img-bot-normal.png';
-const IMG_BOT_PENSANDO = 'img-bot-pensando.png';
+const IMG_BOT_NORMAL = 'logo.png';
+const IMG_BOT_PENSANDO = 'logo.png';
 
 // --- CONFIGURACIÓN DE MENÚS (RRHH + CHASBOT) ---
 const MENUS = {
