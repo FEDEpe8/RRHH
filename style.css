@@ -12,12 +12,12 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    /* CORRECCIÓN: Usar dvh para móviles evita que la barra de direcciones rompa el diseño */
     height: 100vh;
     height: 100dvh; 
     overflow: hidden;
+    position: fixed; /* NUEVO: Fija la app a la pantalla visible */
+    width: 100%;     /* NUEVO: Evita desbordes horizontales al fijar */
 }
-
 /* --- Splash Screen --- */
 #splash-screen {
     position: fixed;
@@ -55,14 +55,15 @@ body {
 
 /* --- Chat Container --- */
 .chat-container {
-    flex: 1;
+    flex: 1 1 0;      /* NUEVO: Fuerza a que respete el espacio disponible */
+    min-height: 0;    /* NUEVO: Clave para que no desborde hacia abajo */
     overflow-y: auto;
     padding: 15px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 /* --- Mensajes --- */
@@ -92,8 +93,9 @@ body {
     gap: 10px;
     border-top: 1px solid #eee;
     align-items: center;
-    /* Protección para la barra de inicio del iPhone abajo */
     padding-bottom: max(10px, env(safe-area-inset-bottom));
+    flex-shrink: 0;   /* NUEVO: Evita que el contenedor de chat la comprima */
+    z-index: 10;      /* NUEVO: Asegura que quede por encima de todo */
 }
 #userInput { flex: 1; border: 1px solid #ddd; border-radius: 25px; padding: 12px 20px; font-size: 16px; /* 16px evita zoom automático en iPhone */ outline: none; transition: border-color 0.3s; }
 #userInput:focus { border-color: var(--secondary); }
