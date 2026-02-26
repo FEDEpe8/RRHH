@@ -6,17 +6,25 @@
     --user-msg: #004a7c;
 }
 
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%; /* Clave: porcentaje en lugar de vh para PWA standalone */
+    overflow: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg-light);
-    margin: 0;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh; 
-    overflow: hidden;
-    position: fixed; /* NUEVO: Fija la app a la pantalla visible */
-    width: 100%;     /* NUEVO: Evita desbordes horizontales al fijar */
+    /* Fija la app exactamente a los bordes de la pantalla */
+    position: fixed; 
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 /* --- Splash Screen --- */
 #splash-screen {
@@ -94,8 +102,10 @@ body {
     border-top: 1px solid #eee;
     align-items: center;
     padding-bottom: max(10px, env(safe-area-inset-bottom));
-    flex-shrink: 0;   /* NUEVO: Evita que el contenedor de chat la comprima */
-    z-index: 10;      /* NUEVO: Asegura que quede por encima de todo */
+    flex-shrink: 0;   
+    z-index: 10;      
+    box-sizing: border-box; /* NUEVO: Evita que el padding infle el contenedor */
+    width: 100%;            /* NUEVO: Asegura que no se desborde a los costados */
 }
 #userInput { flex: 1; border: 1px solid #ddd; border-radius: 25px; padding: 12px 20px; font-size: 16px; /* 16px evita zoom automático en iPhone */ outline: none; transition: border-color 0.3s; }
 #userInput:focus { border-color: var(--secondary); }
