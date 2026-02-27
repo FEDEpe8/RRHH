@@ -1113,7 +1113,7 @@ function showNavControls() {
 
 // --- CONEXIÓN CON GOOGLE SHEETS (LOGS) ---
 // REEMPLAZÁ ESTA URL con la URL de tu Web App de Google Script
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxGotLmeUGgokjrR6_eWXjxZB27LLEumfozC6X3ZhfGWfWf2z94RYuz4XuHTcejXS9I/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyz-nuHO51qcTLQ3AIRK0IHJcMgjwlqYIKs_dABpHaS1Ujf-YXlFaRYkeYWuAiqobxt/exec';
 
 function registrarEnPlanilla(accion, detalle) {
     // Evitamos enviar si no configuraste la URL todavía
