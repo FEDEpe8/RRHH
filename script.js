@@ -1111,6 +1111,37 @@ function showNavControls() {
     addMessage("", "bot", [{ id: 'main', label: '🏠 Inicio' }]);
 }
 
+// --- CONEXIÓN CON GOOGLE SHEETS (LOGS) ---
+// REEMPLAZÁ ESTA URL con la URL de tu Web App de Google Script
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxGotLmeUGgokjrR6_eWXjxZB27LLEumfozC6X3ZhfGWfWf2z94RYuz4XuHTcejXS9I/exec';
+
+function registrarEnPlanilla(accion, detalle) {
+    // Evitamos enviar si no configuraste la URL todavía
+    if (!SCRIPT_URL || SCRIPT_URL.includes('TU_ID_DEL_SCRIPT_AQUI')) return;
+
+    // Armamos el paquete de datos exactamente como lo espera tu doPost
+    const payload = {
+        fecha: new Date().toLocaleString('es-AR'), // Guarda fecha y hora de Argentina
+        usuario: userName || "Anónimo",
+        accion: accion,
+        detalle: detalle
+    };
+
+    // Enviamos los datos sin bloquear la aplicación
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Súper importante para Google Apps Script
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    }).then(() => {
+        console.log("Registro guardado en Sheets:", accion);
+    }).catch(error => {
+        console.error("Error al guardar en Sheets:", error);
+    });
+}
+
 // --- FUNCIONES LÓGICAS ---
 function normalizar(str) {
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -1133,6 +1164,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
+        registrarEnPlanilla('Nuevo Registro', 'Nombre ingresado: ' + userName); // <-- NUEVO
         showMenu('main');
     }
 }
@@ -1168,6 +1200,9 @@ function processInput() {
     if (!userName) {
         registrarDato(val);
     } else {
+
+    registrarEnPlanilla('Búsqueda de Texto', val); // <-- NUEVO
+        
         ejecutarBusqueda(val);
     }
 }
@@ -1176,15 +1211,20 @@ function handleAction(opt) {
     if (opt.id === 'back') { 
         currentPath.pop(); 
         showMenu(currentPath[currentPath.length - 1]); 
+        registrarEnPlanilla('Navegación', 'Volvió atrás'); // <-- NUEVO
         return; 
     }
     if (opt.link) {
+        registrarEnPlanilla('Enlace Externo', 'Abrió link: ' + opt.label); // <-- NUEVO
         window.open(opt.link, '_blank');
         return;
     }
 
     addMessage(opt.label, 'user');
     showTyping();
+    
+    // Guardamos en Sheets qué botón tocó
+    registrarEnPlanilla('Clic en Botón', opt.label); // <-- NUEVO
 
     setTimeout(() => {
         if (opt.apiKey) {
@@ -1196,7 +1236,6 @@ function handleAction(opt) {
         }
     }, 800);
 }
-
 // --- GESTOR DE AGENDA DINÁMICA (GOOGLE SHEETS) ---
 async function cargarAgendaDinamica() {
     const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9D6xP_nenB_S-xlnMgAd9rBjY17-fGNiGrVnKgOvlQ3I23giB2VgCnN62JYRB6qX_cVEfpdx6g6k/pub?output=csv'; 
