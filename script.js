@@ -67,6 +67,12 @@ const MENUS = {
         title: () => '⚕️ Medicina Laboral',
         image: 'medicina_laboral.png',
         footer: 'Departamento de Medicina Laboral', 
+        description: `whastapp: <a href="https://wa.me/5492241461777" target="_blank"
+        class="wa-btn" style="background-color: #25D366 !important; color: white;
+        text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br>
+            Para consultas médicas laborales, turnos o información sobre protocolos de salud en el ámbito laboral,
+            puedes acceder al Departamento de Medicina Laboral a través del WhatsApp oficial. 
+            Estamos para ayudarte con cualquier consulta relacionada con tu salud laboral.`,
         options: [{ id: 'back', label: '⬅️ Volver' }]
     },
     sueldos_menu: {
