@@ -55,7 +55,7 @@ const MENUS = {
         title: () => '🫱🏻‍🫲🏿 RRHH - Personal Municipal:',
         options: [
             { id: 'medicina_menu', label: '⚕️ Medicina Laboral' },
-            { id: 'sueldos_menu', label: '💰 Sueldos y Horas Extra' },
+            { id: 'sueldos_menu', label: '💰 Sueldos, Novedades y Aguinaldo' },
             { id: 'licencias_menu', label: '📅 Vacaciones y Licencias' },
             { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
             { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
@@ -78,8 +78,8 @@ const MENUS = {
     sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
         options: [
-            { id: 'recibo', label: '📄 Último Recibo', type: 'leaf', apiKey: 'info_recibos' },
-            { id: 'extras', label: '⏰ Horas Extra', type: 'leaf', apiKey: 'construccion' },
+            { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' },
+            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'construccion' },
             { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
@@ -363,19 +363,24 @@ const RES = {
     'info_escolaridad': `
         <div class="info-card">
             <strong>🎒 Certificado de Escolaridad</strong><br><br>
-            Recordá que para cobrar la Ayuda Escolar Anual es obligatorio presentar el certificado.<br><br>
-            📅 <b>Vencimiento:</b> 31 de Marzo.<br>
-            📎 <b>Formato:</b> PDF o Foto clara.<br>
-            <a href="https://forms.gle/tu_link_de_google_forms" target="_blank" class="wa-btn">📤 Subir Certificado Acá</a>
+            Recordá que para cobrar la Ayuda Escolar Anual es obligatorio presentar el certificado.<b></b><br><br>
+            <b>A partir de la fecha 25/02/2026</b>,
+            y previo al comienzo de clases, se abonara el subsidio correspondiente.<br><br>
+            📅 <b>Vencimiento:</b> 30 de Junio los que ya presentaron el certificado en 2025<br>
+            📆<b>Vencimiento:</b> 30 de Abril los que cobran por primera vez. Presentar el certificado.<br>
+            📎 <b>Formato:</b> Emitido por la Institucion Educativa.<br>
+            📎 <b>Entrega:</b> Oficina de Liquidaciones de 08:00hs - 13:00hs.(Cramer 270, Planta Baja).<br>
         </div>`,
+
     'info_licencias': `
         <div class="info-card">
             <strong>🚑 Licencias Médicas</strong><br><br>
-            Si estás enfermo, debés avisar antes de las 9:00 AM.<br><br>
-            📞 <b>Auditoría Médica:</b> 43-1234<br>
-            📍 <b>Lugar:</b> Hospital Municipal (Consultorio 4).<br>
+            Si estás enfermo, debés avisar 24:00 hs. antes de la jornada laboral.<br><br>
+            📞 <b>Auditoría Médica:</b> <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a><br>
+            📍 <b>Lugar:</b> Medicina Laboral Dorrego y Bolivar(Ex centro cívico).<br>
             <i>Recordá llevar certificado con diagnóstico y días de reposo.</i>
         </div>`,
+
     'agenda_dinamica': `<div class="info-card">⚠️ <b>Cargando agenda...</b><br>Si esto no cambia en unos segundos, revisá tu conexión.</div>`,
     'error_busqueda': `
         <div class="info-card" style="border-left: 5px solid #ffc107;">
