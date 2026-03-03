@@ -67,12 +67,12 @@ const MENUS = {
         title: () => '⚕️ Medicina Laboral',
         image: 'medicina_laboral.png',
         footer: 'Departamento de Medicina Laboral', 
-        description: `whastapp: <a href="https://wa.me/5492241461777" target="_blank"
-        class="wa-btn" style="background-color: #25D366 !important; color: white;
-        text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br>
-            Para consultas médicas laborales, turnos o información sobre protocolos de salud en el ámbito laboral,
+        description: `Para consultas médicas laborales, turnos o información sobre protocolos de salud en el ámbito laboral,
             puedes acceder al Departamento de Medicina Laboral a través del WhatsApp oficial. 
-            Estamos para ayudarte con cualquier consulta relacionada con tu salud laboral.`,
+            Estamos para ayudarte con cualquier consulta relacionada con tu salud laboral.
+            <br><br><a href="https://wa.me/5492241461777" target="_blank"
+        class="wa-btn" style="background-color: #25D366 !important; color: white;
+        text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br></br>`,
         options: [{ id: 'back', label: '⬅️ Volver' }]
     },
     sueldos_menu: {
@@ -105,9 +105,8 @@ const MENUS = {
     soy_municipal: {
         title: () => 'Beneficios del Programa Soy Municipal:',
         options: [
-            { id: 'soy_desc', label: '🎁 Descuentos y Beneficios', type: 'leaf', apiKey: 'construccion' },
-            { id: 'soy_como', label: '📋 ¿Cómo acceder?', type: 'leaf', apiKey: 'construccion' },
-            { id: 'soy_reg', label: '📝 Registro y Renovación', type: 'leaf', apiKey: 'construccion' },
+             { id: 'soy_como', label: '📋 ¿Cómo acceder?', type: 'leaf', apiKey: 'info_acceder' },
+            { id: 'soy_desc', label: '🎁 Locales adheridos', type: 'leaf', apiKey: 'info_soy_municipal' },
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
@@ -353,8 +352,8 @@ const RES = {
         <div class="info-card">
             <strong>💰 Información de Sueldos</strong><br><br>
             Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
-            📅 <b>Período:</b> Primer Medio Aguinaldo (Junio): Suele acreditarse ultima semana de junio.<br>
-            📅 <b>Período:</b> Segundo Medio Aguinaldo (Diciembre): Generalmente se deposita  antes de las festividades.<br>
+            📅 <b>Período:</b> Primer Medio Aguinaldo (Junio): Suele acreditarse entre el 23 y el 27 de junio.<br>
+            📅 <b>Período:</b> Segundo Medio Aguinaldo (Diciembre): Generalmente se deposita alrededor del 20 de diciembre, antes de las festividades.<br>
             📌 <b>Acreditación:</b> El municipio <b>GARANTIZA</b> que los fondos estén disponibles en las cuentas de los empleados antes de finalizar el mes correspondiente..<br>
             📎 <b>Formato:</b> PDF o Documento Digital.<br>
             📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
@@ -379,6 +378,33 @@ const RES = {
             📞 <b>Auditoría Médica:</b> <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a><br>
             📍 <b>Lugar:</b> Medicina Laboral Dorrego y Bolivar(Ex centro cívico).<br>
             <i>Recordá llevar certificado con diagnóstico y días de reposo.</i>
+        </div>`,
+
+        'info_soy_municipal': `
+        <div class="info-card">
+            <strong>🛍️ Locales Adheridos al Programa Soy Municipal</strong><br><br>
+            <b>Alimentos:</b><br>
+            🛒SuperChas (en sus 3 sucursales)<br>
+            🍝Pastas La Bianca<br>🛒Almacén de Descuentos<br>🥗Verduleria y fiambreria “Santa Elena”.<br>
+            <b>Gastronomía</b><br>La Fonda<br>La Roti<br>
+            <b>Carnicería</b><br>🥩La Carniceria<br>
+            <b>Heladerías</b><br>🍧Grido (en sus dos direcciones)<br>🍨Brinato<br>
+            <b>Belleza y bienestar</b><br>💇🏻‍♀️Lion Peluqueria<br>💇Multiespacio Capilar<br>🧴Ana Chrestia Cosmiatra<br>💈Peluquería Ídolos<br>
+            <b>Indumentaria</b><br>Vado Di Piu<br>👠Stock Calzados<br>👔Bumerang<br>🦺Indulab<br>
+            <b>Educación</b><br>💂🏼‍♂️Join In, school of English<br>2️⃣1️⃣Universidad Siglo XXI<br>
+            <b>Aire Libre</b><br>🏕️Camping Camino del Sol<br>
+            <b>Servicios</b><br>🖨️Imprenta El Rayo<br>
+            <b>Hogar y construcción</b><br>🧱Corralon el Chaqueño<br>🫟Pintureria Alvear<br>🔩La casa del Tornillo<br>
+            <b>Juguetería y Librería</b><br>🪁Chiquilandia<br>
+        </div>`,
+
+'info_acceder': `
+        <div class="info-card">
+            <strong>🎁 Beneficios Soy Municipal</strong><br>
+            El programa "Soy Municipal" ofrece descuentos exclusivos en locales adheridos para los empleados municipales.<br><br>
+            📋 <b>¿Cómo acceder?</b><br>
+            1️⃣ Registrate en el programa a través de la página oficial.<br>
+            2️⃣ Presentá tu credencial de empleado municipal en los locales adheridos.<br><br>
         </div>`,
 
     'agenda_dinamica': `<div class="info-card">⚠️ <b>Cargando agenda...</b><br>Si esto no cambia en unos segundos, revisá tu conexión.</div>`,
@@ -527,7 +553,7 @@ const RES = {
             • <b>Pensa:</b> H. Yrigoyen 710<br>
             • <b>Pozzi:</b> Rioja 28<br>
             • <b>Puyssegur:</b> Libres del Sur 946<br><br>
-            💊 <a href="https://farmaciasdeturnoya.com.ar/localidad/chascomus-P0-C29-Z9" target="_blank" class="wa-btn" style="background:#2ecc71 !important;">VER FARMACIAS DE TURNO</a>
+            💊 <a href="https://www.turnofarma.com/turnos/ar/ba/chascomus" target="_blank" class="wa-btn" style="background:#2ecc71 !important;">VER FARMACIAS DE TURNO</a>
         </div>`,
     'zoo_rabia': `
         <div class="info-card" style="border-left: 5px solid #f1c40f;">
