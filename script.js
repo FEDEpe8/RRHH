@@ -1097,7 +1097,7 @@ function showNavControls() {
 }
 
 // --- CONEXIÓN CON GOOGLE SHEETS (LOGS) ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5MD_2b-vySciW0EUE3gHbAVynkoeucvG91W9gFAznnRGoba-ttOsiqE67yzDbB6E/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsykXV0qe7rta50BrM2i8flXktxx90NVpnZH3wHWwp6c0ymoioEcAeuUGjLm8y6Jpd/exec';
 
 function registrarEnPlanilla(detalle) {
     if (!SCRIPT_URL || SCRIPT_URL.includes('TU_ID_DEL_SCRIPT_AQUI')) return;
@@ -1144,7 +1144,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
-        registrarEnPlanilla('Nuevo Registro: Ingresó el nombre ' + userName); 
+        // registrarEnPlanilla('Nuevo Registro: Ingresó el nombre ' + userName); // <- LÍNEA COMENTADA
         showMenu('main');
     }
 }
@@ -1188,11 +1188,11 @@ function handleAction(opt) {
     if (opt.id === 'back') { 
         currentPath.pop(); 
         showMenu(currentPath[currentPath.length - 1]); 
-        registrarEnPlanilla('Navegación: Tocó el botón Volver Atrás'); 
+        //registrarEnPlanilla('Navegación: Tocó el botón Volver Atrás'); // Podés comentar esto si tampoco lo querés medir
         return; 
     }
     if (opt.link) {
-        registrarEnPlanilla('Enlace Externo: Abrió el link de ' + opt.label); 
+        registrarEnPlanilla('Enlace Externo: Abrió el link de ' + opt.label); // Podés comentar esto también si hace falta
         window.open(opt.link, '_blank');
         return;
     }
@@ -1200,7 +1200,8 @@ function handleAction(opt) {
     addMessage(opt.label, 'user');
     showTyping();
     
-    registrarEnPlanilla('Clic en Botón: Eligió la opción ' + opt.label); 
+    // registrarEnPlanilla('Clic en Botón: Eligió la opción ' + opt.label); // <- LÍNEA COMENTADA
+    
     setTimeout(() => {
         if (opt.apiKey) {
             addMessage(RES[opt.apiKey]);
