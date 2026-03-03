@@ -54,12 +54,20 @@ const MENUS = {
     rrhh_menu: {
         title: () => '🫱🏻‍🫲🏿 RRHH - Personal Municipal:',
         options: [
+            { id: 'medicina_menu', label: '⚕️ Medicina Laboral' },
             { id: 'sueldos_menu', label: '💰 Sueldos y Horas Extra' },
             { id: 'licencias_menu', label: '📅 Vacaciones y Licencias' },
             { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
             { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
             { id: 'back', label: '⬅️ Volver' }
         ]
+    },
+    medicina_menu: {
+        type: 'card',
+        title: () => '⚕️ Medicina Laboral',
+        image: 'medicina_laboral.png',
+        footer: 'Departamento de Medicina Laboral', 
+        options: [{ id: 'back', label: '⬅️ Volver' }]
     },
     sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
