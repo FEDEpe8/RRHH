@@ -1144,7 +1144,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
-        // registrarEnPlanilla('Nuevo Registro: Ingresó el nombre ' + userName); // <- LÍNEA COMENTADA
+         registrarEnPlanilla; // <- LÍNEA COMENTADA
         showMenu('main');
     }
 }
@@ -1200,7 +1200,7 @@ function handleAction(opt) {
     addMessage(opt.label, 'user');
     showTyping();
     
-    // registrarEnPlanilla('Clic en Botón: Eligió la opción ' + opt.label); // <- LÍNEA COMENTADA
+    registrarEnPlanilla( opt.label); // <- LÍNEA COMENTADA
     
     setTimeout(() => {
         if (opt.apiKey) {
