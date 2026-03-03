@@ -78,27 +78,6 @@ const MENUS = {
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
-
-    'info_recibos': `
-        <div class="info-card">
-            <strong>💰 Información de Sueldos</strong><br><br>
-            Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
-            📅 <b>Período:</b> Mensual.<br>
-            📎 <b>Formato:</b> PDF o Documento Digital.<br>
-            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
-        </div>`,
-
-        'info_sac': `
-        <div class="info-card">
-            <strong>💰 Información de Sueldos</strong><br><br>
-            Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
-            📅 <b>Período:</b> Primer Medio Aguinaldo (Junio): Suele acreditarse entre el 23 y el 27 de junio.<br>
-            📅 <b>Período:</b> Segundo Medio Aguinaldo (Diciembre): Generalmente se deposita alrededor del 20 de diciembre, antes de las festividades.<br>
-            📌 <b>Acreditación:</b> El municipio <b>GARANTIZA</b> que los fondos estén disponibles en las cuentas de los empleados antes de finalizar el mes correspondiente..<br>
-            📎 <b>Formato:</b> PDF o Documento Digital.<br>
-            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
-        </div>`,
-
     licencias_menu: {
         title: () => '📅 Gestión de Ausencias:',
         options: [
@@ -354,6 +333,27 @@ const RES = {
             🚧 <b>Módulo en mantenimiento</b><br>
             Estamos actualizando esta información. Por favor, consultá en la oficina de personal.
         </div>`,
+
+        'info_recibos': `
+        <div class="info-card">
+            <strong>💰 Información de Sueldos</strong><br><br>
+            Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
+            📅 <b>Período:</b> Mensual.<br>
+            📎 <b>Formato:</b> PDF o Documento Digital.<br>
+            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
+        </div>`,
+
+        'info_sac': `
+        <div class="info-card">
+            <strong>💰 Información de Sueldos</strong><br><br>
+            Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
+            📅 <b>Período:</b> Primer Medio Aguinaldo (Junio): Suele acreditarse entre el 23 y el 27 de junio.<br>
+            📅 <b>Período:</b> Segundo Medio Aguinaldo (Diciembre): Generalmente se deposita alrededor del 20 de diciembre, antes de las festividades.<br>
+            📌 <b>Acreditación:</b> El municipio <b>GARANTIZA</b> que los fondos estén disponibles en las cuentas de los empleados antes de finalizar el mes correspondiente..<br>
+            📎 <b>Formato:</b> PDF o Documento Digital.<br>
+            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
+        </div>`,
+
     'info_escolaridad': `
         <div class="info-card">
             <strong>🎒 Certificado de Escolaridad</strong><br><br>
