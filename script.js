@@ -72,9 +72,9 @@ const MENUS = {
     sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
         options: [
-            { id: 'recibo', label: '📄 Último Recibo', type: 'leaf', apiKey: 'construccion' },
+            { id: 'recibo', label: '📄 Último Recibo', type: 'leaf', apiKey: 'info_recibos' },
             { id: 'extras', label: '⏰ Horas Extra', type: 'leaf', apiKey: 'construccion' },
-            { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'construccion' },
+            { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
