@@ -6,6 +6,10 @@
 let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
+let isAwaitingPin = false; // NUEVO: Controla si esperamos contraseña
+const PIN_PRUEBA = ["1234", "2121"]; // NUEVO: Pin temporal para probar
+let currentPin = ""; // Guarda el PIN que escribió el usuario
+const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbwDUeRqugm4AKgkgcAVxoIfIovQj6K-9fcK_ACWl3da-X8wl-uBec1a52RLqHjfvCw0Lw/exec';
 
 // --- CONSTANTES ---
 const IMG_BOT_NORMAL = 'logo.png';
@@ -59,7 +63,15 @@ const MENUS = {
             { id: 'licencias_menu', label: '📅 Vacaciones y Licencias' },
             { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
             { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
+            { id: 'btn_pedir_pin', label: '🔐 Acceso Referentes RRHH' },
             { id: 'back', label: '⬅️ Volver' }
+        ]
+    },
+    menu_referentes_exclusivo: {
+        title: () => '🔐 Panel de Referentes RRHH:',
+        options: [
+            { id: 'licencias_area', label: '📊 Ver licencias de mi área', type: 'leaf', apiKey: 'licencias_area_info' },
+            { id: 'rrhh_menu', label: '⬅️ Salir del panel' }
         ]
     },
     medicina_menu: {
@@ -332,6 +344,19 @@ const MENUS = {
 
 // --- RESPUESTAS (BASE DE DATOS INTEGRADA) ---
 const RES = {
+    'licencias_area_info': `
+        <div class="info-card">
+            <strong>📊 Licencias en mi Área</strong><br><br>
+            Aquí podrás consultar un resumen de las licencias activas en tu área, incluyendo tipo de licencia, fechas y estado de aprobación.<br><br>
+            📋 <b>Información mostrada:</b><br>
+            - Nombre del empleado<br>
+            - Tipo de licencia (vacaciones, médica, etc.)<br>
+            - Fecha de inicio y fin<br>
+            - Estado (aprobada, pendiente, rechazada)<br><br>
+            📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
+            📞 <b>Contacto RRHH:</b> Para consultas específicas, contactá a RRHH al <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a>
+        </div>`,
+
     'info_novedades': `
         <div class="info-card">
             🚧 <b>Entrega de Novedades</b><br>
@@ -1164,7 +1189,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
-        registrarEnPlanilla; // <- LÍNEA COMENTADA
+        registrarEnPlanilla('Nuevo usuario registrado: ' + userName); // LÍNEA CORREGIDA
         showMenu('main');
     }
 }
@@ -1196,39 +1221,68 @@ function processInput() {
     addMessage(val, 'user');
     input.value = "";
 
+    // Si todavía no registramos el nombre, lo tomamos y salimos
     if (!userName) {
         registrarDato(val);
-    } else {
-        registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
-        ejecutarBusqueda(val);
+        return;
+    } 
+    
+    // --- Chequeo del PIN ---
+    if (isAwaitingPin) {
+        isAwaitingPin = false; // Dejamos de esperar PIN
+        validarPinEnBaseDeDatos(val); // Validación real en la nube
+        return; 
     }
+
+    // Búsqueda normal en el asistente
+    registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
+    ejecutarBusqueda(val);
 }
 
+// --- FUNCIÓN RESTAURADA ---
 function handleAction(opt) {
     if (opt.id === 'back') { 
         currentPath.pop(); 
         showMenu(currentPath[currentPath.length - 1]); 
-        //registrarEnPlanilla('Navegación: Tocó el botón Volver Atrás'); // Podés comentar esto si tampoco lo querés medir
         return; 
     }
     if (opt.link) {
-        registrarEnPlanilla('Enlace Externo: Abrió el link de ' + opt.label); // Podés comentar esto también si hace falta
         window.open(opt.link, '_blank');
         return;
     }
+    if (opt.id === 'licencias_area') {
+        buscarLicencias(currentPin);
+        return; 
+    }
+    // Lógica cuando tocan el botón de Referente
+    if (opt.id === 'btn_pedir_pin') {
+        isAwaitingPin = true; // Activamos la trampa
+        addMessage(opt.label, 'user');
+        showTyping();
+        setTimeout(() => {
+            addMessage("🔒 Por favor, ingresá tu PIN numérico de acceso exclusivo:", "bot", [
+                { id: 'rrhh_menu', label: 'Cancelar' }
+            ]);
+        }, 800);
+        return; // Cortamos la ejecución acá
+    }
 
+    // Flujo normal para el resto de los botones
     addMessage(opt.label, 'user');
     showTyping();
     
-    registrarEnPlanilla(opt.label); // <- LÍNEA COMENTADA
-    
     setTimeout(() => {
-        if (opt.apiKey) {
-            addMessage(RES[opt.apiKey]);
-            showNavControls();
+        if (opt.type === 'submenu') {
+            currentPath.push(opt.id);
+            showMenu(opt.id);
+        } else if (opt.type === 'leaf' && opt.apiKey) {
+            const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
+            addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
         } else if (MENUS[opt.id]) {
             currentPath.push(opt.id);
             showMenu(opt.id);
+        } else {
+            showMenu('main');
         }
     }, 800);
 }
@@ -1282,7 +1336,80 @@ async function cargarAgendaDinamica() {
         RES['agenda_dinamica'] = `<div class="info-card">⚠️ Error al cargar la agenda.<br>Intentá nuevamente más tarde.</div>`;
     }
 }
+// --- VALIDACIÓN DE PIN EN LA NUBE ---
+async function validarPinEnBaseDeDatos(pin) {
+    addMessage("Validando credenciales...", "bot");
+    showTyping();
 
+    try {
+        // Consultamos al Sheet enviando "action=validar"
+        const response = await fetch(`${URL_API_LICENCIAS}?action=validar&pin=${pin}`);
+        const data = await response.json();
+
+        if (data.valido === true) {
+            currentPin = pin; // Guardamos el PIN correcto
+            currentPath.push('menu_referentes_exclusivo');
+            showMenu('menu_referentes_exclusivo');
+        } else {
+            addMessage("❌ PIN incorrecto o no registrado. Acceso denegado.", "bot", [
+                {id: 'rrhh_menu', label: '⬅️ Volver a RRHH'}
+            ]);
+        }
+    } catch (error) {
+        console.error("Error al validar:", error);
+        addMessage("⚠️ Hubo un error de conexión al validar el PIN. Intentá de nuevo.", "bot", [
+            {id: 'rrhh_menu', label: '⬅️ Volver a RRHH'}
+        ]);
+    }
+}
+// --- BÚSQUEDA DINÁMICA DE LICENCIAS ---
+async function buscarLicencias(pin) {
+    addMessage("Buscando las novedades actualizadas de tu área...", "bot");
+    showTyping();
+
+    try {
+        const response = await fetch(`${URL_API_LICENCIAS}?action=licencias&pin=${pin}`);
+        const data = await response.json();
+
+        // Si el Sheet no devolvió nada (array vacío)
+        if (data.length === 0) {
+            addMessage("No se encontraron licencias activas para tu área en este momento.", "bot", [
+                { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+            ]);
+            return;
+        }
+
+        // Armamos el mensaje con los resultados
+        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Activas</strong><br><br>`;
+        
+        data.forEach(lic => {
+            // Le ponemos un colorcito al estado para que quede más visual
+            let semaforo = '⚪';
+            if (lic.estado.toLowerCase().includes('aprobada')) semaforo = '🟢';
+            if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
+            if (lic.estado.toLowerCase().includes('rechazada')) semaforo = '🔴';
+
+            htmlResultados += `
+                👤 <b>${lic.empleado}</b><br>
+                🏷️ Tipo: ${lic.tipo}<br>
+                📅 Desde: ${lic.inicio} | Hasta: ${lic.fin}<br>
+                ${semaforo} Estado: <b>${lic.estado}</b><br>
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            `;
+        });
+        htmlResultados += `</div>`;
+
+        addMessage(htmlResultados, "bot", [
+            { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+        ]);
+
+    } catch (error) {
+        console.error("Error al traer las licencias:", error);
+        addMessage("Hubo un error de conexión con la base de datos de Medicina Laboral. Intentá de nuevo más tarde.", "bot", [
+            { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+        ]);
+    }
+}
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     // Si no hay un nombre guardado, el bot pide el nombre. Si ya lo hay, muestra el menú principal.
