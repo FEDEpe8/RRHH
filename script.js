@@ -79,15 +79,15 @@ const MENUS = {
         title: () => '💰 Consultas de Haberes:',
         options: [
             { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' },
-            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'construccion' },
+            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
             { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
     licencias_menu: {
-        title: () => '📅 Gestión de Ausencias:',
+        title: () => '📅 Gestión de Licencias Laborales:',
         options: [
-            { id: 'vacas', label: '🏖️ Mis Vacaciones', type: 'leaf', apiKey: 'construccion' },
+            { id: 'vacas', label: '🏖️ Mis Vacaciones', type: 'leaf', apiKey: 'info_vacaciones' },
             { id: 'medica', label: '🚑 Licencia Médica', type: 'leaf', apiKey: 'info_licencias' },
             { id: 'examen', label: '📚 Licencia por Examen', type: 'leaf', apiKey: 'construccion' },
             { id: 'back', label: '⬅️ Volver' }
@@ -97,8 +97,7 @@ const MENUS = {
         title: () => '📝 Trámites de Personal:',
         options: [
             { id: 'esc', label: '🎒 Escolaridad', type: 'leaf', apiKey: 'info_escolaridad' },
-            { id: 'antig', label: '🎖️ Certif. Antigüedad', type: 'leaf', apiKey: 'construccion' },
-            { id: 'familiar', label: '👥 Grupo Familiar', type: 'leaf', apiKey: 'construccion' },
+            { id: 'antig', label: '🎖️ Certificados', type: 'leaf', apiKey: 'construccion' },
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
@@ -333,10 +332,19 @@ const MENUS = {
 
 // --- RESPUESTAS (BASE DE DATOS INTEGRADA) ---
 const RES = {
-    'construccion': `
+    'info_novedades': `
         <div class="info-card">
-            🚧 <b>Módulo en mantenimiento</b><br>
-            Estamos actualizando esta información. Por favor, consultá en la oficina de personal.
+            🚧 <b>Entrega de Novedades</b><br>
+            Por medio de la presente, se informa el cronograma con las fechas límite para la entrega y carga de novedades correspondientes a la liquidación del mes en curso.
+            Para garantizar el correcto procesamiento y evitar demoras en los pagos, los cierres se realizarán en las siguientes fechas:<br><br>
+            <span style="color: red;">
+           📅 <b>Horas Extras:</b><b> Lunes 9 de marzo de 2026</b><br>
+           📅 <b>Personal Docente:</b><b> Viernes 13 de marzo de 2026</b><br>
+           📅 <b>Sueldos (Novedades generales):</b><b> Jueves 19 de marzo de 2026</b><br>
+           </span>
+            Se solicita a todas las áreas respetar estrictamente estos plazos.
+            Toda novedad remitida con posterioridad a las fechas indicadas no podrá ser procesada en la liquidación actual
+             y quedará pendiente para el próximo período..
         </div>`,
 
         'info_recibos': `
@@ -370,6 +378,18 @@ const RES = {
             📎 <b>Formato:</b> Emitido por la Institucion Educativa.<br>
             📎 <b>Entrega:</b> Oficina de Liquidaciones de 08:00hs - 13:00hs.(Cramer 270, Planta Baja).<br>
         </div>`,
+'info_vacaciones': `
+        <div class="info-card">
+            <strong>🏖️ Vacaciones Anuales</strong><br><br>
+            Las vacaciones se otorgan según el régimen de cada empleado y la antigüedad en el cargo.<br><br>
+            📅 <b>Período:</b> Se otorgan entre Octubre y Octubre, pero pueden ser programadas en otros meses según la planificación de cada área.<br><br>
+            📎 <b>Solicitud:</b> Se debe solicitar con anticipación a través del referente de RRHH de su area correspondiente.<br><br>
+            📎 <b>Duración:</b> los días de vacaciones laborables dependen de tu antigüedad al 31 de diciembre del año al que corresponden: 
+               Menos de 5 años: 14 días corridos.
+               5 a 10 años: 21 días corridos.
+               10 a 20 años: 28 días corridos.
+               Más de 20 años: 35 días corridos..<br><br>
+        </div>`,
 
     'info_licencias': `
         <div class="info-card">
@@ -386,11 +406,11 @@ const RES = {
             <b>Alimentos:</b><br>
             🛒SuperChas (en sus 3 sucursales)<br>
             🍝Pastas La Bianca<br>🛒Almacén de Descuentos<br>🥗Verduleria y fiambreria “Santa Elena”.<br>
-            <b>Gastronomía</b><br>La Fonda<br>La Roti<br>
+            <b>Gastronomía</b><br>🍝La Fonda<br>🍜La Roti<br>🍕Il Formagio<br>
             <b>Carnicería</b><br>🥩La Carniceria<br>
             <b>Heladerías</b><br>🍧Grido (en sus dos direcciones)<br>🍨Brinato<br>
             <b>Belleza y bienestar</b><br>💇🏻‍♀️Lion Peluqueria<br>💇Multiespacio Capilar<br>🧴Ana Chrestia Cosmiatra<br>💈Peluquería Ídolos<br>
-            <b>Indumentaria</b><br>Vado Di Piu<br>👠Stock Calzados<br>👔Bumerang<br>🦺Indulab<br>
+            <b>Indumentaria</b><br>👗Vado Di Piu<br>👠Stock Calzados<br>👔Bumerang<br>🦺Indulab<br>
             <b>Educación</b><br>💂🏼‍♂️Join In, school of English<br>2️⃣1️⃣Universidad Siglo XXI<br>
             <b>Aire Libre</b><br>🏕️Camping Camino del Sol<br>
             <b>Servicios</b><br>🖨️Imprenta El Rayo<br>
@@ -1144,7 +1164,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
-         registrarEnPlanilla; // <- LÍNEA COMENTADA
+        registrarEnPlanilla; // <- LÍNEA COMENTADA
         showMenu('main');
     }
 }
@@ -1200,7 +1220,7 @@ function handleAction(opt) {
     addMessage(opt.label, 'user');
     showTyping();
     
-    registrarEnPlanilla( opt.label); // <- LÍNEA COMENTADA
+    registrarEnPlanilla(opt.label); // <- LÍNEA COMENTADA
     
     setTimeout(() => {
         if (opt.apiKey) {
