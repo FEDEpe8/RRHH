@@ -59,7 +59,7 @@ const MENUS = {
         title: () => '🫱🏻‍🫲🏿 RRHH - Personal Municipal:',
         options: [
             { id: 'medicina_menu', label: '⚕️ Medicina Laboral' },
-            { id: 'sueldos_menu', label: '💰 Sueldos, Novedades y Aguinaldo' },
+            { id: 'sueldos_menu', label: '💰 Sueldos y Aguinaldo' },
             { id: 'licencias_menu', label: '📅 Vacaciones y Licencias' },
             { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
             { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
@@ -70,7 +70,8 @@ const MENUS = {
     menu_referentes_exclusivo: {
         title: () => '🔐 Panel de Referentes RRHH:',
         options: [
-            { id: 'licencias_area', label: '📊 Ver licencias de mi área', type: 'leaf', apiKey: 'licencias_area_info' },
+            { id: 'licencias_area', label: '📊 Ver licencias de Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
+            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
             { id: 'rrhh_menu', label: '⬅️ Salir del panel' }
         ]
     },
@@ -91,7 +92,6 @@ const MENUS = {
         title: () => '💰 Consultas de Haberes:',
         options: [
             { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' },
-            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
             { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
