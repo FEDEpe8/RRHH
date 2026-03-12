@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rrhh-chascomus-v31'; // Cambiá la versión si hacés cambios
+const CACHE_NAME = 'rrhh-chascomus-v32'; // Cambiá la versión si hacés cambios
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
