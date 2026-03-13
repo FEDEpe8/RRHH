@@ -72,6 +72,7 @@ const MENUS = {
         options: [
             { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
             { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
+            { id: 'otras_licencias', label: '🚑 Otras licencias (vacaciones, maternidad, etc)', type: 'leaf', apiKey: 'info_otras_licencias' },
             { id: 'rrhh_menu', label: '⬅️ Salir del panel' }
         ]
     },
@@ -355,6 +356,19 @@ const RES = {
             - Estado (aprobada, pendiente, rechazada)<br><br>
             📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
             📞 <b>Contacto RRHH:</b> Para consultas específicas, contactá a RRHH al <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a>
+        </div>`,
+
+        'info_otras_licencias': `
+        <div class="info-card">
+            <strong>🚑 Otras Licencias</strong><br><br>
+            Aquí podrás consultar información sobre otras licencias, como vacaciones, maternidad, entre otras.<br><br>
+            📋 <b>Información mostrada:</b><br>
+            - Nombre del empleado<br>
+            - Tipo de licencia<br>
+            - Fecha de inicio y fin<br>
+            - Estado (aprobada, pendiente, rechazada)<br><br>
+            📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
+            📞 <b>Contacto Oficina de Capital Humano:</b> Para consultas específicas, contactár al <a href="https://wa.me/5492241493410" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a>
         </div>`,
 
     'info_novedades': `
