@@ -64,7 +64,7 @@ const MENUS = {
             { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
             { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
             { id: 'btn_pedir_pin', label: '🔐 Acceso Referentes RRHH' },
-            { id: 'back', label: '⬅️ Volver' }
+            { id: 'back', label: '⬅️ Volver al inicio' }
         ]
     },
     menu_referentes_exclusivo: {
@@ -369,7 +369,7 @@ const RES = {
            </span>
             Se solicita a todas las áreas respetar estrictamente estos plazos.
             Toda novedad remitida con posterioridad a las fechas indicadas no podrá ser procesada en la liquidación actual
-             y quedará pendiente para el próximo período..
+            y quedará pendiente para el próximo período..'<br><br>
         </div>`,
 
         'info_recibos': `
@@ -387,7 +387,7 @@ const RES = {
             Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
             📅 <b>Período:</b> Primer Medio Aguinaldo (Junio): Suele acreditarse entre el 23 y el 27 de junio.<br>
             📅 <b>Período:</b> Segundo Medio Aguinaldo (Diciembre): Generalmente se deposita alrededor del 20 de diciembre, antes de las festividades.<br>
-            📌 <b>Acreditación:</b> El municipio <b>GARANTIZA</b> que los fondos estén disponibles en las cuentas de los empleados antes de finalizar el mes correspondiente..<br>
+            📌 <b>Acreditación:</b> Gracias al uso de <b>FONDOS PROPIOS</b>, el municipio <b>ASEGURA</b> el depósito de los salarios antes de que termine el mes.<br>
             📎 <b>Formato:</b> PDF o Documento Digital.<br>
             📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
         </div>`,
@@ -1251,6 +1251,7 @@ function handleAction(opt) {
         return;
     }
     if (opt.id === 'licencias_area') {
+        currentPath.push(opt.id); // <--- CORRECCIÓN HISTORIAL LICENCIAS
         buscarLicencias(currentPin);
         return; 
     }
@@ -1276,6 +1277,9 @@ function handleAction(opt) {
             currentPath.push(opt.id);
             showMenu(opt.id);
         } else if (opt.type === 'leaf' && opt.apiKey) {
+            
+            currentPath.push(opt.id); // <--- CORRECCIÓN HISTORIAL TARJETAS FINALES (NOVEDADES, ETC)
+
             const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
             addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
         } else if (MENUS[opt.id]) {
@@ -1373,14 +1377,14 @@ async function buscarLicencias(pin) {
 
         // Si el Sheet no devolvió nada (array vacío)
         if (data.length === 0) {
-            addMessage("No se encontraron licencias activas para tu área en este momento.", "bot", [
-                { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+            addMessage("No se encontraron licencias Medicas activas para tu área en este momento.", "bot", [
+                { id: 'back', label: '⬅️ Volver al panel' } // <--- CORRECCIÓN BOTÓN RETROCESO
             ]);
             return;
         }
 
         // Armamos el mensaje con los resultados
-        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Activas</strong><br><br>`;
+        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Medicas Activas</strong><br><br>`;
         
         data.forEach(lic => {
             // Le ponemos un colorcito al estado para que quede más visual
@@ -1400,13 +1404,13 @@ async function buscarLicencias(pin) {
         htmlResultados += `</div>`;
 
         addMessage(htmlResultados, "bot", [
-            { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+            { id: 'back', label: '⬅️ Volver al panel' }, // <--- CORRECCIÓN BOTÓN RETROCESO
         ]);
 
     } catch (error) {
         console.error("Error al traer las licencias:", error);
         addMessage("Hubo un error de conexión con la base de datos de Medicina Laboral. Intentá de nuevo más tarde.", "bot", [
-            { id: 'menu_referentes_exclusivo', label: '⬅️ Volver al panel' }
+            { id: 'back', label: '⬅️ Volver al panel' } // <--- CORRECCIÓN BOTÓN RETROCESO
         ]);
     }
 }
@@ -1414,7 +1418,7 @@ async function buscarLicencias(pin) {
 document.addEventListener('DOMContentLoaded', () => {
     // Si no hay un nombre guardado, el bot pide el nombre. Si ya lo hay, muestra el menú principal.
     if (!userName) {
-        addMessage("¡Hola! 👋 Soy ChasBot, tu asistente municipal. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
+        addMessage("¡Hola! 👋 Soy  tu asistente municipal. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
     } else {
         showMenu('main');
     }
