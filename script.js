@@ -73,7 +73,7 @@ const MENUS = {
             { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
             { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
             { id: 'otras_licencias', label: '🚑 Otras licencias (vacaciones, maternidad, etc)', type: 'leaf', apiKey: 'info_otras_licencias' },
-            { id: 'rrhh_menu', label: '⬅️ Salir del panel' }
+            { id: 'back', label: '⬅️ Salir del panel' }
         ]
     },
     medicina_menu: {
@@ -368,7 +368,8 @@ const RES = {
             - Fecha de inicio y fin<br>
             - Estado (aprobada, pendiente, rechazada)<br><br>
             📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
-            📞 <b>Contacto Oficina de Capital Humano:</b> Para consultas específicas, contactár al <a href="https://wa.me/5492241493410" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a>
+           📞 <b>Contacto Oficina de Capital Humano:</b> Para consultas específicas, contactár al <a href="https://wa.me/5492241493410" target="_blank" class="wa-btn">
+            💬 WhatsApp 49-3410</a>
         </div>`,
 
     'info_novedades': `
@@ -1078,7 +1079,9 @@ const PALABRAS_CLAVE = {
     'busqueda': { apiKey: 'res_empl_busqueda', label: '🔎 Búsqueda de Personal' },
     'madrinas': { apiKey: 'res_empl_madrinas', label: '🤝 Empresas Madrinas' },
     'contacto': { apiKey: 'contacto_gral', label: '🏛️ Contacto Municipalidad' },
-    'agenda': { apiKey: 'agenda_dinamica', label: '📅 Agenda Actualizada' }
+    'agenda': { apiKey: 'agenda_dinamica', label: '📅 Agenda Actualizada' },
+    'maternidad': { apiKey: 'info_otras_licencias', label: '🚑 Otras licencias' },
+    'otras_licencias': { apiKey: 'info_otras_licencias', label: '🚑 Otras licencias' },
 };
 
 // --- FUNCIONES VISUALES ---
