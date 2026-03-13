@@ -7,7 +7,7 @@ let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
 let isAwaitingPin = false; // NUEVO: Controla si esperamos contraseña
-const PIN_PRUEBA = ["1234", "2121"]; // NUEVO: Pin temporal para probar
+const PIN_PRUEBA = ["1234"]; // NUEVO: Pin temporal para probar
 let currentPin = ""; // Guarda el PIN que escribió el usuario
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbwDUeRqugm4AKgkgcAVxoIfIovQj6K-9fcK_ACWl3da-X8wl-uBec1a52RLqHjfvCw0Lw/exec';
 
@@ -70,7 +70,7 @@ const MENUS = {
     menu_referentes_exclusivo: {
         title: () => '🔐 Panel de Referentes RRHH:',
         options: [
-            { id: 'licencias_area', label: '📊 Ver licencias de Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
+            { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
             { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
             { id: 'rrhh_menu', label: '⬅️ Salir del panel' }
         ]
@@ -92,6 +92,7 @@ const MENUS = {
         title: () => '💰 Consultas de Haberes:',
         options: [
             { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' },
+            
             { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
@@ -100,7 +101,6 @@ const MENUS = {
         title: () => '📅 Gestión de Licencias Laborales:',
         options: [
             { id: 'vacas', label: '🏖️ Mis Vacaciones', type: 'leaf', apiKey: 'info_vacaciones' },
-            { id: 'medica', label: '🚑 Licencia Médica', type: 'leaf', apiKey: 'info_licencias' },
             { id: 'examen', label: '📚 Licencia por Examen', type: 'leaf', apiKey: 'construccion' },
             { id: 'back', label: '⬅️ Volver' }
         ]
@@ -1385,9 +1385,9 @@ async function buscarLicencias(pin) {
         data.forEach(lic => {
             // Le ponemos un colorcito al estado para que quede más visual
             let semaforo = '⚪';
-            if (lic.estado.toLowerCase().includes('aprobada')) semaforo = '🟢';
+            if (lic.estado.toLowerCase().includes('activa')) semaforo = '🟢';
             if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
-            if (lic.estado.toLowerCase().includes('rechazada')) semaforo = '🔴';
+            if (lic.estado.toLowerCase().includes('finalizada')) semaforo = '🔴';
 
             htmlResultados += `
                 👤 <b>${lic.empleado}</b><br>
