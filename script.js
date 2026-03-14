@@ -9,7 +9,7 @@ let isBotThinking = false;
 let isAwaitingPin = false; // NUEVO: Controla si esperamos contraseña
 const PIN_PRUEBA = ["1234"]; // NUEVO: Pin temporal para probar
 let currentPin = ""; // Guarda el PIN que escribió el usuario
-const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbwDUeRqugm4AKgkgcAVxoIfIovQj6K-9fcK_ACWl3da-X8wl-uBec1a52RLqHjfvCw0Lw/exec';
+const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
 
 // --- CONSTANTES ---
 const IMG_BOT_NORMAL = 'logo.png';
@@ -70,9 +70,9 @@ const MENUS = {
     menu_referentes_exclusivo: {
         title: () => '🔐 Panel de Referentes RRHH:',
         options: [
-            { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
             { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
-            { id: 'otras_licencias', label: '🚑 Otras licencias (vacaciones, maternidad, etc)', type: 'leaf', apiKey: 'info_otras_licencias' },
+            { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
+            { id: 'otras_licencias_dinamico', label: '🌴 Ver Otras licencias (Vacaciones, Maternidad, etc;)' },
             { id: 'back', label: '⬅️ Salir del panel' }
         ]
     },
@@ -181,6 +181,8 @@ const MENUS = {
         options: [
             { id: 'd_info', label: '📍 Dirección de Deportes', type: 'leaf', apiKey: 'deportes_info' },
             { id: 'd_calle', label: '🏃 Circuito de Calle', type: 'leaf', apiKey: 'deportes_circuito' },
+            { id: 'trail_info', label: '🚴 Trail', type: 'leaf', apiKey: 'deportes_trail' },
+            { id: 'aguas_abiertas', label: '🏊 Aguas Abiertas', type: 'leaf', apiKey: 'info_deportes_aguas' },
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
@@ -463,7 +465,7 @@ const RES = {
             <strong>🎁 Beneficios Soy Municipal</strong><br>
             El programa "Soy Municipal" ofrece descuentos exclusivos en locales adheridos para los empleados municipales.<br><br>
             📋 <b>¿Cómo acceder?</b><br>
-            1️⃣ Registrate en el programa a través de la página oficial.<br>
+            1️⃣ Solicitala en la oficina de Recursos Humanos, en el Palacio Municipal.<br>
             2️⃣ Presentá tu credencial de empleado municipal en los locales adheridos.<br><br>
         </div>`,
 
@@ -739,8 +741,30 @@ const RES = {
             Solicitalo a <a href="tel:422222" class="wa-btn" style="background-color:#25D366 !important; text-align:center;">📞 42-2222</a><br><br>
         </div>`,
     'turismo_info': `<div class="info-card"><strong>🏖️ Subsecretaría de Turismo</strong><br>📍 Av. Costanera España 25<br>📞 <a href="tel:02241615542">02241 61-5542</a><br>📧 <a href="mailto:turismo@chascomus.gob.ar">Enviar Email</a><br>🔗 <a href="https://linktr.ee/turismoch" target="_blank">Más info en Linktree</a></div>`,
-    'deportes_info': `<div class="info-card"><strong>⚽ Dirección de Deportes</strong><br>📍 Av. Costanera España y Av. Lastra<br>📞 <a href="tel:02241424649">(02241) 42-4649</a></div>`,
-    'deportes_circuito': `<div class="info-card"><strong>🏃 Circuito de Calle</strong><br>Inscripciones, cronograma y resultados oficiales.<br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/circuitodecalle/" target="_blank">IR A LA WEB</a></div>`,
+    
+    'deportes_info': `<div class="info-card"><strong>⚽ Dirección de Deportes</strong><br>
+    📍 Av. Costanera España y Av. Lastra<br>📞 <a href="tel:02241424649">(02241) 42-4649</a></div>`,
+    
+    'deportes_circuito': `
+    <div class="info-card"><strong>🏃 Circuito de Calle</strong><br>Inscripciones y resultados oficiales.
+    <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/circuitodecalle/" 
+    target="_blank"</a><brIR A LA WEB</a><br>INCRIPCIONES CIRCUITO DE CALLE
+    </div>`,
+    
+    'deportes_trail': `
+    <div class="info-card"><strong>🚴 Trail Bike</strong><br>Inscripciones y resultados oficiales.
+    <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/trail/inscripcion.php" 
+    target="_blank"</a><brIR A LA WEB</a><br>INCRIPCIONES TRAIL BIKE
+    </div>`,
+    
+'info_deportes_aguas': `
+     <div class="info-card"><strong>🏊 Aguas Abiertas</strong><br>Inscripciones y resultados oficiales
+     <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/aguasabiertas/inscripcion.php"
+     target="_blank"</a><IR A LA WEB</a><br>
+    INSCRIPCIONES AGUAS ABIERTAS.
+    <br>🔗 <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTdlmaYq_wSB0aZj-GNNOWRtzBK8OwZ86_eu2McGhPfcfwrelp8I1IMWWT7v9bv3QBh86sdGPVOWDKy/pubhtml" target="_blank"</a><IR A LA WEB</a><br>RESULTADOS OFICIALES
+     </div>`,
+     
     'politicas_gen': `
         <div class="info-card" style="border-left: 5px solid #9b59b6;">
             <strong style="color: #8e44ad; font-size: 1rem;">💜 Género y Diversidad</strong><br><br>
@@ -1272,6 +1296,11 @@ function handleAction(opt) {
         buscarLicencias(currentPin);
         return; 
     }
+    if (opt.id === 'otras_licencias_dinamico') {
+        currentPath.push(opt.id);
+        buscarOtrasLicencias(currentPin); // Llama a la nueva función
+        return; 
+    }
     // Lógica cuando tocan el botón de Referente
     if (opt.id === 'btn_pedir_pin') {
         isAwaitingPin = true; // Activamos la trampa
@@ -1383,9 +1412,9 @@ async function validarPinEnBaseDeDatos(pin) {
         ]);
     }
 }
-// --- BÚSQUEDA DINÁMICA DE LICENCIAS ---
+// --- BÚSQUEDA DINÁMICA DE LICENCIAS MEDICAS ---
 async function buscarLicencias(pin) {
-    addMessage("Buscando las novedades actualizadas de tu área...", "bot");
+    addMessage("Buscando las licencias médicas actualizadas de tu área...", "bot");
     showTyping();
 
     try {
@@ -1394,17 +1423,16 @@ async function buscarLicencias(pin) {
 
         // Si el Sheet no devolvió nada (array vacío)
         if (data.length === 0) {
-            addMessage("No se encontraron licencias Medicas activas para tu área en este momento.", "bot", [
-                { id: 'back', label: '⬅️ Volver al panel' } // <--- CORRECCIÓN BOTÓN RETROCESO
+            addMessage("No se encontraron licencias Médicas activas para tu área en este momento.", "bot", [
+                { id: 'back', label: '⬅️ Volver al panel' } 
             ]);
             return;
         }
 
         // Armamos el mensaje con los resultados
-        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Medicas Activas</strong><br><br>`;
+        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Médicas Activas</strong><br><br>`;
         
         data.forEach(lic => {
-            // Le ponemos un colorcito al estado para que quede más visual
             let semaforo = '⚪';
             if (lic.estado.toLowerCase().includes('activa')) semaforo = '🟢';
             if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
@@ -1421,13 +1449,59 @@ async function buscarLicencias(pin) {
         htmlResultados += `</div>`;
 
         addMessage(htmlResultados, "bot", [
-            { id: 'back', label: '⬅️ Volver al panel' }, // <--- CORRECCIÓN BOTÓN RETROCESO
+            { id: 'back', label: '⬅️ Volver al panel' }, 
         ]);
 
     } catch (error) {
         console.error("Error al traer las licencias:", error);
         addMessage("Hubo un error de conexión con la base de datos de Medicina Laboral. Intentá de nuevo más tarde.", "bot", [
-            { id: 'back', label: '⬅️ Volver al panel' } // <--- CORRECCIÓN BOTÓN RETROCESO
+            { id: 'back', label: '⬅️ Volver al panel' } 
+        ]);
+    }
+}
+// --- BÚSQUEDA DINÁMICA DE OTRAS LICENCIAS ---
+async function buscarOtrasLicencias(pin) {
+    addMessage("Buscando las licencias (Vacaciones, Maternidad, Artículos) de tu área...", "bot");
+    showTyping();
+
+    try {
+        // Acá está la clave: le pedimos la action "otras_licencias" a tu Google Sheet
+        const response = await fetch(`${URL_API_LICENCIAS}?action=otras_licencias&pin=${pin}`);
+        const data = await response.json();
+
+        if (data.length === 0) {
+            addMessage("No se encontraron otras licencias activas para tu área en este momento.", "bot", [
+                { id: 'back', label: '⬅️ Volver al panel' }
+            ]);
+            return;
+        }
+
+        let htmlResultados = `<div class="info-card"><strong>🌴 Otras Licencias Activas</strong><br><br>`;
+        
+        data.forEach(lic => {
+            let semaforo = '⚪';
+            if (lic.estado.toLowerCase().includes('activa')) semaforo = '🟢';
+            if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
+            if (lic.estado.toLowerCase().includes('finalizada')) semaforo = '🔴';
+
+            htmlResultados += `
+                👤 <b>${lic.empleado}</b><br>
+                🏷️ Tipo: ${lic.tipo}<br>
+                📅 Desde: ${lic.inicio} | Hasta: ${lic.fin}<br>
+                ${semaforo} Estado: <b>${lic.estado}</b><br>
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            `;
+        });
+        htmlResultados += `</div>`;
+
+        addMessage(htmlResultados, "bot", [
+            { id: 'back', label: '⬅️ Volver al panel' }, 
+        ]);
+
+    } catch (error) {
+        console.error("Error al traer las licencias:", error);
+        addMessage("Hubo un error de conexión con la base de datos. Intentá de nuevo más tarde.", "bot", [
+            { id: 'back', label: '⬅️ Volver al panel' } 
         ]);
     }
 }
