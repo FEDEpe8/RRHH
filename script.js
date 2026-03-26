@@ -1,5 +1,5 @@
 // ==========================================================================
-// SCRIPT PRINCIPAL: RRHH + CHASBOT (INTEGRADO FULL - SOLO NOMBRE)
+// SCRIPT PRINCIPAL: RRHH + MUNIBOT (INTEGRADO FULL - SOLO NOMBRE)
 // ==========================================================================
 
 // --- VARIABLES DE ESTADO ---
@@ -7,9 +7,9 @@ let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
 let isAwaitingPin = false; 
-let isAwaitingLegajo = false; // NUEVO: Controla si esperamos legajo
-const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; // Cambiá esto por la ruta real // NUEVO: Controla si esperamos contraseña
-const PIN_PRUEBA = ["1234"]; // NUEVO: Pin temporal para probar
+let isAwaitingLegajo = false; // Controla si esperamos legajo
+const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; // Cambiá esto por la ruta real
+const PIN_PRUEBA = ["1234"]; 
 let currentPin = ""; // Guarda el PIN que escribió el usuario
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
 
@@ -17,7 +17,7 @@ const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90G
 const IMG_BOT_NORMAL = 'logo.png';
 const IMG_BOT_PENSANDO = 'logo.png';
 
-// --- CONFIGURACIÓN DE MENÚS (RRHH + CHASBOT) ---
+// --- CONFIGURACIÓN DE MENÚS (RRHH + MUNIBOT) ---
 const MENUS = {
     main: {
         title: (name) => `¡Hola <b>${name}</b>! 👋 ¿En qué puedo ayudarte hoy? Acá tenés los accesos de 🫱🏻‍🫲🏿 RRHH y 🏛️ Servicios al Ciudadano:`,
@@ -35,7 +35,7 @@ const MENUS = {
         ]
     },
     servicios_municipales: {
-        title: () => '📱 Servicios al Ciudadano (ChasBot):',
+        title: () => '📱 Servicios al Ciudadano (MuniBot):',
         options: [
             { id: 'politicas_gen', label: '💜 GÉNERO (Urgencias)', type: 'leaf', apiKey: 'politicas_gen' },
             { id: 'politicas_comu', label: '🛍️ Módulos (alimentos)', type: 'leaf', apiKey: 'asistencia_social' },
@@ -91,7 +91,7 @@ const MENUS = {
         text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br></br>`,
         options: [{ id: 'back', label: '⬅️ Volver' }]
     },
- sueldos_menu: {
+    sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
         options: [
             { id: 'recibo', label: '📄 Último Recibo y Extras' }, 
@@ -122,7 +122,7 @@ const MENUS = {
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
-    // SUBMENÚS DE CHASBOT
+    // SUBMENÚS DE MUNIBOT
     ojos_en_alerta: {
         title: () => '👁️ Ojos en Alerta:',
         options: [
@@ -1230,7 +1230,7 @@ function registrarDato(valor) {
     if (!userName) {
         userName = valor;
         localStorage.setItem('rrhh_user_name', userName);
-        registrarEnPlanilla('Nuevo usuario registrado: ' + userName); // LÍNEA CORREGIDA
+        registrarEnPlanilla('Nuevo usuario registrado: ' + userName); 
         showMenu('main');
     }
 }
@@ -1275,6 +1275,13 @@ function processInput() {
         return; 
     }
 
+    // --- Chequeo del Legajo ---
+    if (isAwaitingLegajo) {
+        isAwaitingLegajo = false; // Dejamos de esperar legajo
+        consultarReciboIntranet(val); // Llamamos a la nueva función
+        return; 
+    }
+
     // Búsqueda normal en el asistente
     registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
     ejecutarBusqueda(val);
@@ -1292,16 +1299,17 @@ function handleAction(opt) {
         return;
     }
     if (opt.id === 'licencias_area') {
-        currentPath.push(opt.id); // <--- CORRECCIÓN HISTORIAL LICENCIAS
+        currentPath.push(opt.id); 
         buscarLicencias(currentPin);
         return; 
     }
     if (opt.id === 'otras_licencias_dinamico') {
         currentPath.push(opt.id);
-        buscarOtrasLicencias(currentPin); // Llama a la nueva función
+        buscarOtrasLicencias(currentPin); 
         return; 
     }
-   // Lógica cuando tocan el botón de Recibo
+
+    // Lógica cuando tocan el botón de Recibo
     if (opt.id === 'recibo') {
         isAwaitingLegajo = true; // Activamos la trampa para el legajo
         addMessage(opt.label, 'user');
@@ -1312,7 +1320,9 @@ function handleAction(opt) {
             ]);
         }, 800);
         return; // Cortamos la ejecución acá
-    } // Lógica cuando tocan el botón de Referente
+    } 
+
+    // Lógica cuando tocan el botón de Referente
     if (opt.id === 'btn_pedir_pin') {
         isAwaitingPin = true; // Activamos la trampa
         addMessage(opt.label, 'user');
@@ -1322,12 +1332,7 @@ function handleAction(opt) {
                 { id: 'rrhh_menu', label: 'Cancelar' }
             ]);
         }, 800);
-       // --- Chequeo del Legajo ---
-    if (isAwaitingLegajo) {
-        isAwaitingLegajo = false; // Dejamos de esperar legajo
-        consultarReciboIntranet(val); // Llamamos a la nueva función
-        return; 
-    }
+        return; // Cortamos la ejecución acá
     }
 
     // Flujo normal para el resto de los botones
@@ -1340,7 +1345,7 @@ function handleAction(opt) {
             showMenu(opt.id);
         } else if (opt.type === 'leaf' && opt.apiKey) {
             
-            currentPath.push(opt.id); // <--- CORRECCIÓN HISTORIAL TARJETAS FINALES (NOVEDADES, ETC)
+            currentPath.push(opt.id); 
 
             const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
             addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
@@ -1402,6 +1407,7 @@ async function cargarAgendaDinamica() {
         RES['agenda_dinamica'] = `<div class="info-card">⚠️ Error al cargar la agenda.<br>Intentá nuevamente más tarde.</div>`;
     }
 }
+
 // --- VALIDACIÓN DE PIN EN LA NUBE ---
 async function validarPinEnBaseDeDatos(pin) {
     addMessage("Validando credenciales...", "bot");
@@ -1417,17 +1423,20 @@ async function validarPinEnBaseDeDatos(pin) {
             currentPath.push('menu_referentes_exclusivo');
             showMenu('menu_referentes_exclusivo');
         } else {
-            addMessage("❌ PIN incorrecto o no registrado. Acceso denegado.", "bot", [
-                {id: 'rrhh_menu', label: '⬅️ Volver a RRHH'}
+            addMessage("❌ PIN incorrecto o no registrado.", "bot", [
+                { id: 'btn_pedir_pin', label: '🔄 Volver a intentar' },
+                { id: 'rrhh_menu', label: '⬅️ Volver a RRHH' }
             ]);
         }
     } catch (error) {
         console.error("Error al validar:", error);
         addMessage("⚠️ Hubo un error de conexión al validar el PIN. Intentá de nuevo.", "bot", [
-            {id: 'rrhh_menu', label: '⬅️ Volver a RRHH'}
+            { id: 'btn_pedir_pin', label: '🔄 Volver a intentar' },
+            { id: 'rrhh_menu', label: '⬅️ Volver a RRHH' }
         ]);
     }
 }
+
 // --- BÚSQUEDA DINÁMICA DE LICENCIAS MEDICAS ---
 async function buscarLicencias(pin) {
     addMessage("Buscando las licencias médicas actualizadas de tu área...", "bot");
@@ -1475,6 +1484,7 @@ async function buscarLicencias(pin) {
         ]);
     }
 }
+
 // --- BÚSQUEDA DINÁMICA DE OTRAS LICENCIAS ---
 async function buscarOtrasLicencias(pin) {
     addMessage("Buscando las licencias (Vacaciones, Maternidad, Artículos) de tu área...", "bot");
@@ -1521,11 +1531,53 @@ async function buscarOtrasLicencias(pin) {
         ]);
     }
 }
+
+// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET ---
+async function consultarReciboIntranet(legajo) {
+    addMessage("Buscando tu información en la Intranet...", "bot");
+    showTyping();
+
+    try {
+        // Hacemos el request por GET pasando el legajo
+        const response = await fetch(`${URL_API_INTRANET}?legajo=${legajo}`);
+        const data = await response.json();
+
+        // Asumimos que tu API devuelve un JSON con { "exito": true, "nombre": "...", "periodo": "...", "monto": "...", "link": "..." }
+        if (data.exito === true) {
+            let htmlRecibo = `
+                <div class="info-card">
+                    <strong>📄 Último Recibo de Sueldo</strong><br><br>
+                    👤 <b>Empleado:</b> ${data.nombre}<br>
+                    📅 <b>Período:</b> ${data.periodo}<br>
+                    💰 <b>Neto a cobrar:</b> $${data.monto}<br>
+                    <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                    <a href="${data.link_pdf}" target="_blank" class="wa-btn" style="background-color: #004a7c !important; text-align: center; display: block;">
+                        📥 Descargar PDF
+                    </a>
+                </div>
+            `;
+            addMessage(htmlRecibo, "bot", [{ id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }]);
+        } else {
+            // Si el legajo no existe o hay error de validación
+            addMessage(`❌ No encontramos información para el legajo ${legajo} o no tenés recibos pendientes.`, "bot", [
+                { id: 'recibo', label: '🔄 Volver a intentar' },
+                { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
+            ]);
+        }
+    } catch (error) {
+        console.error("Error al consultar recibo:", error);
+        addMessage("⚠️ Hubo un error de conexión con la Intranet. Intentá de nuevo más tarde.", "bot", [
+            { id: 'recibo', label: '🔄 Volver a intentar' },
+            { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
+        ]);
+    }
+}
+
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
     // Si no hay un nombre guardado, el bot pide el nombre. Si ya lo hay, muestra el menú principal.
     if (!userName) {
-        addMessage("¡Hola! 👋 Soy  tu asistente municipal. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
+        addMessage("¡Hola! 👋 Soy tu asistente municipal. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
     } else {
         showMenu('main');
     }
@@ -1575,42 +1627,3 @@ document.addEventListener('DOMContentLoaded', () => {
         if(installBtn) installBtn.classList.add('hidden');
     });
 });
-// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET ---
-async function consultarReciboIntranet(legajo) {
-    addMessage("Buscando tu información en la Intranet...", "bot");
-    showTyping();
-
-    try {
-        // Hacemos el request por GET pasando el legajo
-        const response = await fetch(`${URL_API_INTRANET}?legajo=${legajo}`);
-        const data = await response.json();
-
-        // Asumimos que tu API devuelve un JSON con { "exito": true, "nombre": "...", "periodo": "...", "monto": "...", "link": "..." }
-        if (data.exito === true) {
-            let htmlRecibo = `
-                <div class="info-card">
-                    <strong>📄 Último Recibo de Sueldo</strong><br><br>
-                    👤 <b>Empleado:</b> ${data.nombre}<br>
-                    📅 <b>Período:</b> ${data.periodo}<br>
-                    💰 <b>Neto a cobrar:</b> $${data.monto}<br>
-                    <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
-                    <a href="${data.link_pdf}" target="_blank" class="wa-btn" style="background-color: #004a7c !important; text-align: center; display: block;">
-                        📥 Descargar PDF
-                    </a>
-                </div>
-            `;
-            addMessage(htmlRecibo, "bot", [{ id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }]);
-        } else {
-            // Si el legajo no existe o hay error de validación
-            addMessage(`❌ No encontramos información para el legajo ${legajo} o no tenés recibos pendientes.`, "bot", [
-                { id: 'recibo', label: '🔄 Intentar con otro legajo' },
-                { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
-            ]);
-        }
-    } catch (error) {
-        console.error("Error al consultar recibo:", error);
-        addMessage("⚠️ Hubo un error de conexión con la Intranet. Intentá de nuevo más tarde.", "bot", [
-            { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
-        ]);
-    }
-}
