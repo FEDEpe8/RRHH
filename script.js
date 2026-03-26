@@ -97,7 +97,7 @@ const MENUS = {
         title: () => '💰 Consultas de Haberes:',
         options: [
             { id: 'recibo', label: '📄 Último Recibo y Extras' }, 
-            { id: 'back', label: '⬅️ Volver' }
+            //{ id: 'back', label: '⬅️ Volver' }
         ]
     },
     licencias_menu: {
