@@ -1,7 +1,7 @@
 <?php
 // 1. Encabezados para permitir la lectura desde el bot (CORS) y definir el tipo de respuesta
 // Reemplazá el '*' por el dominio exacto del bot en producción por seguridad (ej: 'https://munibot.chascomus.gob.ar')
-header('Access-Control-Allow-Origin: *'); 
+header('Access-Control-Allow-Origin: https://fedepe8.github.io/RRHH/'); 
 header('Access-Control-Allow-Methods: GET');
 header('Content-Type: application/json; charset=utf-8');
 
