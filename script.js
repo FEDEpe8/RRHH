@@ -1315,8 +1315,18 @@ function processInput() {
     ejecutarBusqueda(val);
 }
 
-// --- FUNCIÓN RESTAURADA ---
+// --- FUNCIÓN RESTAURADA Y MEJORADA ---
 function handleAction(opt) {
+    // 1. Limpiamos las trampas de texto si el usuario decide tocar cualquier botón
+    // (Excepto si están tocando justamente el botón para iniciar la trampa)
+    if (opt.id !== 'recibo') {
+        isAwaitingDniRecibo = false;
+        isAwaitingLegajoRecibo = false;
+    }
+    if (opt.id !== 'btn_pedir_pin') {
+        isAwaitingPin = false;
+    }
+
     if (opt.id === 'back') { 
         currentPath.pop(); 
         showMenu(currentPath[currentPath.length - 1]); 
@@ -1327,12 +1337,14 @@ function handleAction(opt) {
         return;
     }
     if (opt.id === 'licencias_area') {
-        currentPath.push(opt.id); 
+        // Control: Evitar duplicados en el path
+        if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id); 
         buscarLicencias(currentPin);
         return; 
     }
     if (opt.id === 'otras_licencias_dinamico') {
-        currentPath.push(opt.id);
+        // Control: Evitar duplicados en el path
+        if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
         buscarOtrasLicencias(currentPin); 
         return; 
     }
@@ -1369,16 +1381,18 @@ function handleAction(opt) {
     
     setTimeout(() => {
         if (opt.type === 'submenu') {
-            currentPath.push(opt.id);
+            // Control: Evitar duplicados
+            if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
             showMenu(opt.id);
         } else if (opt.type === 'leaf' && opt.apiKey) {
-            
-            currentPath.push(opt.id); 
+            // Control: Evitar duplicados
+            if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id); 
 
             const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
             addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
         } else if (MENUS[opt.id]) {
-            currentPath.push(opt.id);
+            // Control: Evitar duplicados
+            if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
             showMenu(opt.id);
         } else {
             showMenu('main');
@@ -1448,7 +1462,10 @@ async function validarPinEnBaseDeDatos(pin) {
 
         if (data.valido === true) {
             currentPin = pin; // Guardamos el PIN correcto
-            currentPath.push('menu_referentes_exclusivo');
+            // Control: Evitar duplicados
+            if (currentPath[currentPath.length - 1] !== 'menu_referentes_exclusivo') {
+                currentPath.push('menu_referentes_exclusivo');
+            }
             showMenu('menu_referentes_exclusivo');
         } else {
             addMessage("❌ PIN incorrecto o no registrado.", "bot", [
