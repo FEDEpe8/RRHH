@@ -7,7 +7,9 @@ let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
 let isAwaitingPin = false; 
-let isAwaitingLegajo = false; // Controla si esperamos legajo
+let isAwaitingDniRecibo = false;
+let isAwaitingLegajoRecibo = false;
+let currentDniRecibo = "";
 const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; // Cambiá esto por la ruta real
 const PIN_PRUEBA = ["1234"]; 
 let currentPin = ""; // Guarda el PIN que escribió el usuario
@@ -1256,7 +1258,7 @@ function ejecutarBusqueda(texto) {
 
 function processInput() {
     const input = document.getElementById('userInput');
-    const val = input.value.trim();
+    let val = input.value.trim(); // Aseguramos que 'val' no tenga espacios extra al inicio o final
     if (!val || isBotThinking) return;
 
     addMessage(val, 'user');
@@ -1270,15 +1272,41 @@ function processInput() {
     
     // --- Chequeo del PIN ---
     if (isAwaitingPin) {
-        isAwaitingPin = false; // Dejamos de esperar PIN
-        validarPinEnBaseDeDatos(val); // Validación real en la nube
+        isAwaitingPin = false; 
+        validarPinEnBaseDeDatos(val); 
         return; 
     }
 
-    // --- Chequeo del Legajo ---
-    if (isAwaitingLegajo) {
-        isAwaitingLegajo = false; // Dejamos de esperar legajo
-        consultarReciboIntranet(val); // Llamamos a la nueva función
+    // --- Chequeo de DNI para Recibo ---
+    if (isAwaitingDniRecibo) {
+        // Limpiamos el DNI de puntos y espacios en caso de que el usuario los haya puesto
+        currentDniRecibo = val.replace(/\./g, '').replace(/\s/g, ''); 
+        
+        // Validación súper básica para ver si escribió algo con sentido
+        if (currentDniRecibo.length < 5) {
+             addMessage("❌ Ese número parece muy corto. Por favor, ingresá un DNI válido (sin puntos):", "bot", [
+                { id: 'sueldos_menu', label: 'Cancelar' }
+            ]);
+            // NO cambiamos los estados, seguimos esperando el DNI
+            return;
+        }
+
+        isAwaitingDniRecibo = false;
+        isAwaitingLegajoRecibo = true; 
+        addMessage("🔢 Perfecto. Ahora ingresá tu número de **Legajo**:", "bot", [
+            { id: 'sueldos_menu', label: 'Cancelar' }
+        ]);
+        return; 
+    }
+
+    // --- Chequeo de Legajo para Recibo ---
+    if (isAwaitingLegajoRecibo) {
+        // Limpiamos el legajo también, por si acaso
+        let legajoLimpio = val.replace(/\s/g, '');
+        
+        isAwaitingLegajoRecibo = false;
+        // Mandamos los dos datos limpios a la función
+        consultarReciboIntranet(currentDniRecibo, legajoLimpio); 
         return; 
     }
 
@@ -1311,17 +1339,17 @@ function handleAction(opt) {
 
     // Lógica cuando tocan el botón de Recibo
     if (opt.id === 'recibo') {
-        isAwaitingLegajo = true; // Activamos la trampa para el legajo
+        isAwaitingDniRecibo = true; 
         addMessage(opt.label, 'user');
         showTyping();
         setTimeout(() => {
-            addMessage("🔢 Por favor, ingresá tu número de legajo para buscar tu información:", "bot", [
+            addMessage("👤 Por favor, ingresá tu número de **DNI** (sin puntos) para validar tu identidad:", "bot", [
                 { id: 'sueldos_menu', label: 'Cancelar' }
             ]);
         }, 800);
-        return; // Cortamos la ejecución acá
-    } 
-
+        return;
+    }
+    
     // Lógica cuando tocan el botón de Referente
     if (opt.id === 'btn_pedir_pin') {
         isAwaitingPin = true; // Activamos la trampa
@@ -1532,41 +1560,36 @@ async function buscarOtrasLicencias(pin) {
     }
 }
 
-// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET ---
-async function consultarReciboIntranet(legajo) {
-    addMessage("Buscando tu información en la Intranet...", "bot");
+// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET (VÍA PHP SEGURO) ---
+async function consultarReciboIntranet(dni, legajo) {
+    addMessage("Validando identidad y buscando recibos...", "bot");
     showTyping();
 
     try {
-        // Hacemos el request por GET pasando el legajo
-        const response = await fetch(`${URL_API_INTRANET}?legajo=${legajo}`);
+        const response = await fetch(`${URL_API_INTRANET}?action=consultar&dni=${dni}&legajo=${legajo}`);
         const data = await response.json();
 
-        // Asumimos que tu API devuelve un JSON con { "exito": true, "nombre": "...", "periodo": "...", "monto": "...", "link": "..." }
         if (data.exito === true) {
             let htmlRecibo = `
                 <div class="info-card">
                     <strong>📄 Último Recibo de Sueldo</strong><br><br>
-                    👤 <b>Empleado:</b> ${data.nombre}<br>
-                    📅 <b>Período:</b> ${data.periodo}<br>
-                    💰 <b>Neto a cobrar:</b> $${data.monto}<br>
+                    📅 <b>Período liquidado:</b> ${data.periodo}<br>
                     <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
-                    <a href="${data.link_pdf}" target="_blank" class="wa-btn" style="background-color: #004a7c !important; text-align: center; display: block;">
-                        📥 Descargar PDF
+                    <a href="${data.link_descarga}" target="_blank" class="wa-btn" style="background-color: #004a7c !important; text-align: center; display: block;">
+                        🔒 Ver / Descargar PDF
                     </a>
                 </div>
             `;
             addMessage(htmlRecibo, "bot", [{ id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }]);
         } else {
-            // Si el legajo no existe o hay error de validación
-            addMessage(`❌ No encontramos información para el legajo ${legajo} o no tenés recibos pendientes.`, "bot", [
+            addMessage(`❌ ${data.mensaje}`, "bot", [
                 { id: 'recibo', label: '🔄 Volver a intentar' },
                 { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
             ]);
         }
     } catch (error) {
         console.error("Error al consultar recibo:", error);
-        addMessage("⚠️ Hubo un error de conexión con la Intranet. Intentá de nuevo más tarde.", "bot", [
+        addMessage("⚠️ Hubo un error de conexión con el servidor. Intentá de nuevo más tarde.", "bot", [
             { id: 'recibo', label: '🔄 Volver a intentar' },
             { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
         ]);
