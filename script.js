@@ -6,7 +6,9 @@
 let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
-let isAwaitingPin = false; // NUEVO: Controla si esperamos contraseña
+let isAwaitingPin = false; 
+let isAwaitingLegajo = false; // NUEVO: Controla si esperamos legajo
+const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; // Cambiá esto por la ruta real // NUEVO: Controla si esperamos contraseña
 const PIN_PRUEBA = ["1234"]; // NUEVO: Pin temporal para probar
 let currentPin = ""; // Guarda el PIN que escribió el usuario
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
@@ -89,12 +91,10 @@ const MENUS = {
         text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br></br>`,
         options: [{ id: 'back', label: '⬅️ Volver' }]
     },
-    sueldos_menu: {
+ sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
         options: [
-            { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' },
-            
-            { id: 'sac', label: '💸 Aguinaldo (SAC)', type: 'leaf', apiKey: 'info_sac' },
+            { id: 'recibo', label: '📄 Último Recibo y Extras' }, 
             { id: 'back', label: '⬅️ Volver' }
         ]
     },
@@ -1301,7 +1301,18 @@ function handleAction(opt) {
         buscarOtrasLicencias(currentPin); // Llama a la nueva función
         return; 
     }
-    // Lógica cuando tocan el botón de Referente
+   // Lógica cuando tocan el botón de Recibo
+    if (opt.id === 'recibo') {
+        isAwaitingLegajo = true; // Activamos la trampa para el legajo
+        addMessage(opt.label, 'user');
+        showTyping();
+        setTimeout(() => {
+            addMessage("🔢 Por favor, ingresá tu número de legajo para buscar tu información:", "bot", [
+                { id: 'sueldos_menu', label: 'Cancelar' }
+            ]);
+        }, 800);
+        return; // Cortamos la ejecución acá
+    } // Lógica cuando tocan el botón de Referente
     if (opt.id === 'btn_pedir_pin') {
         isAwaitingPin = true; // Activamos la trampa
         addMessage(opt.label, 'user');
@@ -1311,7 +1322,12 @@ function handleAction(opt) {
                 { id: 'rrhh_menu', label: 'Cancelar' }
             ]);
         }, 800);
-        return; // Cortamos la ejecución acá
+       // --- Chequeo del Legajo ---
+    if (isAwaitingLegajo) {
+        isAwaitingLegajo = false; // Dejamos de esperar legajo
+        consultarReciboIntranet(val); // Llamamos a la nueva función
+        return; 
+    }
     }
 
     // Flujo normal para el resto de los botones
@@ -1559,3 +1575,42 @@ document.addEventListener('DOMContentLoaded', () => {
         if(installBtn) installBtn.classList.add('hidden');
     });
 });
+// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET ---
+async function consultarReciboIntranet(legajo) {
+    addMessage("Buscando tu información en la Intranet...", "bot");
+    showTyping();
+
+    try {
+        // Hacemos el request por GET pasando el legajo
+        const response = await fetch(`${URL_API_INTRANET}?legajo=${legajo}`);
+        const data = await response.json();
+
+        // Asumimos que tu API devuelve un JSON con { "exito": true, "nombre": "...", "periodo": "...", "monto": "...", "link": "..." }
+        if (data.exito === true) {
+            let htmlRecibo = `
+                <div class="info-card">
+                    <strong>📄 Último Recibo de Sueldo</strong><br><br>
+                    👤 <b>Empleado:</b> ${data.nombre}<br>
+                    📅 <b>Período:</b> ${data.periodo}<br>
+                    💰 <b>Neto a cobrar:</b> $${data.monto}<br>
+                    <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                    <a href="${data.link_pdf}" target="_blank" class="wa-btn" style="background-color: #004a7c !important; text-align: center; display: block;">
+                        📥 Descargar PDF
+                    </a>
+                </div>
+            `;
+            addMessage(htmlRecibo, "bot", [{ id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }]);
+        } else {
+            // Si el legajo no existe o hay error de validación
+            addMessage(`❌ No encontramos información para el legajo ${legajo} o no tenés recibos pendientes.`, "bot", [
+                { id: 'recibo', label: '🔄 Intentar con otro legajo' },
+                { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
+            ]);
+        }
+    } catch (error) {
+        console.error("Error al consultar recibo:", error);
+        addMessage("⚠️ Hubo un error de conexión con la Intranet. Intentá de nuevo más tarde.", "bot", [
+            { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
+        ]);
+    }
+}
