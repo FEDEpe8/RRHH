@@ -1,5 +1,5 @@
 // ==========================================================================
-// SCRIPT PRINCIPAL: RRHH + MUNIBOT (INTEGRADO FULL - SOLO NOMBRE)
+// SCRIPT PRINCIPAL: RRHH + MUNIBOT (INTEGRACIÓN N8N IA)
 // ==========================================================================
 
 // --- VARIABLES DE ESTADO ---
@@ -10,12 +10,15 @@ let isAwaitingPin = false;
 let isAwaitingDniRecibo = false;
 let isAwaitingLegajoRecibo = false;
 let currentDniRecibo = "";
-const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; // Cambiá esto por la ruta real
-const PIN_PRUEBA = ["1234"]; 
-let currentPin = ""; // Guarda el PIN que escribió el usuario
+
+// --- ENLACES A APIs EXTERNAS ---
+const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; 
+const WEBHOOK_N8N_IA = 'https://tu-servidor-n8n.com/webhook/munibot-chat'; // REEMPLAZAR POR TU URL DE N8N
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
 
 // --- CONSTANTES ---
+const PIN_PRUEBA = ["1234"]; 
+let currentPin = "";
 const IMG_BOT_NORMAL = 'logo.png';
 const IMG_BOT_PENSANDO = 'logo.png';
 
@@ -1052,64 +1055,6 @@ const RES = {
         </div>`
 };
 
-// --- PALABRAS CLAVE (BUSCADOR INTELIGENTE) ---
-const PALABRAS_CLAVE = {
-    // Redirecciones a menús
-    'rrhh': { id: 'main', label: '👥 Recursos Humanos' },
-    'habilitacion': { id: 'habilitaciones', label: '🏢 Habilitaciones' },
-    '147': { id: 'obras', label: '📝 Reclamos 147' },
-    'farmacia': { id: 'salud_menu', label: '💊 Farmacias' },
-    'hospital': { id: 'hospital_menu', label: '🏥 Hospital' },
-    
-    // Redirecciones directas a tarjetas (Respuestas finales)
-    'tramite': { apiKey: 'hab_gral', label: '🏢 Habilitación Comercial' },
-    'eventos': { apiKey: 'hab_eventos', label: '🎉 Eventos' },
-    'espacio': { apiKey: 'hab_espacio', label: '🍔 Uso de Espacio Público' },
-    'reba': { apiKey: 'hab_reba', label: '🍷 Registro de Alcohol (REBA)' },
-    'pediatria': { apiKey: 'info_pediatria', label: '👶 Pediatría' },
-    'clinica': { apiKey: 'info_clinica', label: '🩺 Clínica Médica' },
-    'gineco': { apiKey: 'info_gineco', label: '🤰 Salud de la Mujer' },
-    'cardio': { apiKey: 'info_cardio', label: '❤️ Cardiología' },
-    'trauma': { apiKey: 'info_trauma', label: '🦴 Traumatología' },
-    'oftalmo': { apiKey: 'info_oftalmo', label: '👁️ Oftalmología' },
-    'nutri': { apiKey: 'info_nutri', label: '🍎 Nutrición' },
-    'cirugia': { apiKey: 'info_cirugia', label: '🔪 Cirugía General' },
-    'neuro_psiq': { apiKey: 'info_neuro_psiq', label: '🧠 Salud Mental y Neurología' },
-    'boleta': { apiKey: 'boleta', label: '📧 Boleta Digital' },
-    'agua': { apiKey: 'agua', label: '💧 Consumo de Agua' },
-    'deuda': { apiKey: 'deuda', label: '🔍 Consulta de Deuda' },
-    'recibo': { apiKey: 'construccion', label: '📄 Recibos de Sueldo' },
-    'extras': { apiKey: 'construccion', label: '📄 Extras' },
-    'liquidacion': { apiKey: 'construccion', label: '📄 Liquidaciones' },
-    'vacaciones': { apiKey: 'construccion', label: '📅 Vacaciones' },
-    'licencia': { apiKey: 'info_licencias', label: '📅 Licencias' },
-    'beneficios': { apiKey: 'construccion', label: '🎁 Beneficios Soy Municipal' },
-    'soy_municipal': { apiKey: 'construccion', label: '🎁 Beneficios Soy Municipal' },
-    'certificado': { apiKey: 'info_escolaridad', label: '🎒 Certificado Escolar' },
-    'familia': { apiKey: 'construccion', label: '👥 Grupo Familiar' },
-    'escolaridad': { apiKey: 'info_escolaridad', label: '🎒 Certificado Escolar' },
-    'sac': { apiKey: 'construccion', label: '💰 SAC - Sueldo Anual Complementario' },
-    'antiguedad': { apiKey: 'construccion', label: '📆 Antigüedad Laboral' },
-    'grupo': { apiKey: 'construccion', label: '👥 Grupo familiar' },
-    'manipulacion': { apiKey: 'res_manipulacion', label: '🔴 Carnet Manipulación Alimentos' },
-    'deudas': { apiKey: 'consulta_tributaria', label: '💸 Consulta de Deudas' },
-    'comprar': { apiKey: 'res_compre_chascomus', label: '🤝 Compre Chascomús' },
-    'turismo': { apiKey: 'turismo_info', label: '🏖️ Turismo' },
-    'deporte': { apiKey: 'deportes_info', label: '⚽ Deportes' },
-    'cultura': { apiKey: 'agenda_dinamica', label: '🎭 Cultura' },
-    'produccion': { apiKey: 'prod_contacto', label: '📍 Contacto Producción' },
-    'empleo': { apiKey: 'res_oe_inscripcion', label: '📝 Inscripción Laboral' },
-    'promover': { apiKey: 'res_oe_promover', label: '♿ Programa Promover' },
-    'taller_cv': { apiKey: 'res_oe_taller_cv', label: '📄 Taller de CV' },
-    'emp_chasco': { apiKey: 'res_emp_chasco', label: '🚀 Programa Chascomús Emprende' },
-    'busqueda': { apiKey: 'res_empl_busqueda', label: '🔎 Búsqueda de Personal' },
-    'madrinas': { apiKey: 'res_empl_madrinas', label: '🤝 Empresas Madrinas' },
-    'contacto': { apiKey: 'contacto_gral', label: '🏛️ Contacto Municipalidad' },
-    'agenda': { apiKey: 'agenda_dinamica', label: '📅 Agenda Actualizada' },
-    'maternidad': { apiKey: 'info_otras_licencias', label: '🚑 Otras licencias' },
-    'otras_licencias': { apiKey: 'info_otras_licencias', label: '🚑 Otras licencias' },
-};
-
 // --- FUNCIONES VISUALES ---
 function setMuniBotState(state) {
     const avatar = document.getElementById('avatar-bot');
@@ -1185,9 +1130,8 @@ function showNavControls() {
 }
 
 // --- CONEXIÓN CON GOOGLE SHEETS (LOGS) ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsykXV0qe7rta50BrM2i8flXktxx90NVpnZH3wHWwp6c0ymoioEcAeuUGjLm8y6Jpd/exec';
-
 function registrarEnPlanilla(detalle) {
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsykXV0qe7rta50BrM2i8flXktxx90NVpnZH3wHWwp6c0ymoioEcAeuUGjLm8y6Jpd/exec';
     if (!SCRIPT_URL || SCRIPT_URL.includes('TU_ID_DEL_SCRIPT_AQUI')) return;
 
     const payload = {
@@ -1199,9 +1143,7 @@ function registrarEnPlanilla(detalle) {
     fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     }).then(() => {
         console.log("Registro guardado en Sheets:", detalle);
@@ -1210,11 +1152,7 @@ function registrarEnPlanilla(detalle) {
     });
 }
 
-// --- FUNCIONES LÓGICAS ---
-function normalizar(str) {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-}
-
+// --- FUNCIONES LÓGICAS BÁSICAS ---
 function clearSession() {
     if (confirm("¿Cerrar sesión y borrar datos?")) {
         localStorage.clear();
@@ -1227,7 +1165,6 @@ function resetToMain() {
     showMenu('main');
 }
 
-// --- REGISTRO ÚNICO (Solo nombre) ---
 function registrarDato(valor) {
     if (!userName) {
         userName = valor;
@@ -1237,34 +1174,61 @@ function registrarDato(valor) {
     }
 }
 
-function ejecutarBusqueda(texto) {
-    const t = normalizar(texto);
-    let encontrado = null;
-    for (let key in PALABRAS_CLAVE) {
-        if (t.includes(key)) { encontrado = PALABRAS_CLAVE[key]; break; }
-    }
-    if (encontrado) {
-        showTyping();
-        setTimeout(() => handleAction(encontrado), 500);
-    } else {
-        showTyping();
-        setTimeout(() => {
-            addMessage("No estoy seguro de entender. ¿Buscás algo de RRHH o del Municipio?", "bot", [
-                { id: 'main', label: 'Menú Principal' }
+// --- BÚSQUEDA INTELIGENTE CON N8N (IA) ---
+async function ejecutarBusqueda(texto) {
+    showTyping();
+
+    try {
+        // Le mandamos lo que el usuario escribió a n8n
+        const response = await fetch(WEBHOOK_N8N_IA, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                mensaje: texto,
+                usuario: userName 
+            })
+        });
+
+        const data = await response.json();
+
+        // MuniBot obedece según la "accion" que decidió la IA
+        if (data.accion === 'texto') {
+            // La IA solo quiere charlar (ej: responder un saludo)
+            addMessage(data.texto, "bot", [{ id: 'main', label: '🏠 Ver Menú' }]);
+            
+        } else if (data.accion === 'tarjeta' && RES[data.id]) {
+            // La IA detectó que necesita una tarjeta de info (ej: farmacias, hospital)
+            addMessage(RES[data.id], "bot", [{ id: 'main', label: '🏠 Inicio' }]);
+            
+        } else if (data.accion === 'menu') {
+            // La IA detectó que el usuario quiere ir a un menú o accionar algo interactivo (ej: recibos)
+            handleAction({ id: data.id, label: 'Buscando...' }); 
+            
+        } else {
+            // Por si la IA devuelve algo mal formateado
+            addMessage("No estoy seguro de entenderte bien. ¿Te muestro el menú principal?", "bot", [
+                { id: 'main', label: '🏠 Menú Principal' }
             ]);
-        }, 600);
+        }
+
+    } catch (error) {
+        console.error("Error al conectar con la IA de n8n:", error);
+        addMessage("Uff, me quedé sin conexión con mi cerebro artificial 🧠. Por favor usá los botones por ahora.", "bot", [
+            { id: 'main', label: '🏠 Ver opciones' }
+        ]);
     }
 }
 
+// --- CAPTURA DEL TEXTO DEL USUARIO ---
 function processInput() {
     const input = document.getElementById('userInput');
-    let val = input.value.trim(); // Aseguramos que 'val' no tenga espacios extra al inicio o final
+    let val = input.value.trim(); 
     if (!val || isBotThinking) return;
 
     addMessage(val, 'user');
     input.value = "";
 
-    // Si todavía no registramos el nombre, lo tomamos y salimos
+    // Si todavía no registramos el nombre
     if (!userName) {
         registrarDato(val);
         return;
@@ -1279,15 +1243,12 @@ function processInput() {
 
     // --- Chequeo de DNI para Recibo ---
     if (isAwaitingDniRecibo) {
-        // Limpiamos el DNI de puntos y espacios en caso de que el usuario los haya puesto
         currentDniRecibo = val.replace(/\./g, '').replace(/\s/g, ''); 
         
-        // Validación súper básica para ver si escribió algo con sentido
         if (currentDniRecibo.length < 5) {
              addMessage("❌ Ese número parece muy corto. Por favor, ingresá un DNI válido (sin puntos):", "bot", [
                 { id: 'sueldos_menu', label: 'Cancelar' }
             ]);
-            // NO cambiamos los estados, seguimos esperando el DNI
             return;
         }
 
@@ -1301,24 +1262,20 @@ function processInput() {
 
     // --- Chequeo de Legajo para Recibo ---
     if (isAwaitingLegajoRecibo) {
-        // Limpiamos el legajo también, por si acaso
         let legajoLimpio = val.replace(/\s/g, '');
         
         isAwaitingLegajoRecibo = false;
-        // Mandamos los dos datos limpios a la función
         consultarReciboIntranet(currentDniRecibo, legajoLimpio); 
         return; 
     }
 
-    // Búsqueda normal en el asistente
-    registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
+    // Si no está esperando un dato específico, procesa la IA
+    registrarEnPlanilla('Búsqueda de Texto IA: "' + val + '"'); 
     ejecutarBusqueda(val);
 }
 
-// --- FUNCIÓN RESTAURADA Y MEJORADA ---
+// --- MANEJO DE BOTONES Y RUTEO ---
 function handleAction(opt) {
-    // 1. Limpiamos las trampas de texto si el usuario decide tocar cualquier botón
-    // (Excepto si están tocando justamente el botón para iniciar la trampa)
     if (opt.id !== 'recibo') {
         isAwaitingDniRecibo = false;
         isAwaitingLegajoRecibo = false;
@@ -1337,19 +1294,17 @@ function handleAction(opt) {
         return;
     }
     if (opt.id === 'licencias_area') {
-        // Control: Evitar duplicados en el path
         if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id); 
         buscarLicencias(currentPin);
         return; 
     }
     if (opt.id === 'otras_licencias_dinamico') {
-        // Control: Evitar duplicados en el path
         if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
         buscarOtrasLicencias(currentPin); 
         return; 
     }
 
-    // Lógica cuando tocan el botón de Recibo
+    // Lógica para pedir Recibo
     if (opt.id === 'recibo') {
         isAwaitingDniRecibo = true; 
         addMessage(opt.label, 'user');
@@ -1362,9 +1317,9 @@ function handleAction(opt) {
         return;
     }
     
-    // Lógica cuando tocan el botón de Referente
+    // Lógica para pedir PIN Referente
     if (opt.id === 'btn_pedir_pin') {
-        isAwaitingPin = true; // Activamos la trampa
+        isAwaitingPin = true; 
         addMessage(opt.label, 'user');
         showTyping();
         setTimeout(() => {
@@ -1372,26 +1327,23 @@ function handleAction(opt) {
                 { id: 'rrhh_menu', label: 'Cancelar' }
             ]);
         }, 800);
-        return; // Cortamos la ejecución acá
+        return; 
     }
 
-    // Flujo normal para el resto de los botones
+    // Flujo normal de navegación
     addMessage(opt.label, 'user');
     showTyping();
     
     setTimeout(() => {
         if (opt.type === 'submenu') {
-            // Control: Evitar duplicados
             if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
             showMenu(opt.id);
         } else if (opt.type === 'leaf' && opt.apiKey) {
-            // Control: Evitar duplicados
             if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id); 
 
             const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
             addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
         } else if (MENUS[opt.id]) {
-            // Control: Evitar duplicados
             if (currentPath[currentPath.length - 1] !== opt.id) currentPath.push(opt.id);
             showMenu(opt.id);
         } else {
@@ -1456,13 +1408,11 @@ async function validarPinEnBaseDeDatos(pin) {
     showTyping();
 
     try {
-        // Consultamos al Sheet enviando "action=validar"
         const response = await fetch(`${URL_API_LICENCIAS}?action=validar&pin=${pin}`);
         const data = await response.json();
 
         if (data.valido === true) {
-            currentPin = pin; // Guardamos el PIN correcto
-            // Control: Evitar duplicados
+            currentPin = pin; 
             if (currentPath[currentPath.length - 1] !== 'menu_referentes_exclusivo') {
                 currentPath.push('menu_referentes_exclusivo');
             }
@@ -1491,7 +1441,6 @@ async function buscarLicencias(pin) {
         const response = await fetch(`${URL_API_LICENCIAS}?action=licencias&pin=${pin}`);
         const data = await response.json();
 
-        // Si el Sheet no devolvió nada (array vacío)
         if (data.length === 0) {
             addMessage("No se encontraron licencias Médicas activas para tu área en este momento.", "bot", [
                 { id: 'back', label: '⬅️ Volver al panel' } 
@@ -1499,7 +1448,6 @@ async function buscarLicencias(pin) {
             return;
         }
 
-        // Armamos el mensaje con los resultados
         let htmlResultados = `<div class="info-card"><strong>📊 Licencias Médicas Activas</strong><br><br>`;
         
         data.forEach(lic => {
@@ -1536,7 +1484,6 @@ async function buscarOtrasLicencias(pin) {
     showTyping();
 
     try {
-        // Acá está la clave: le pedimos la action "otras_licencias" a tu Google Sheet
         const response = await fetch(`${URL_API_LICENCIAS}?action=otras_licencias&pin=${pin}`);
         const data = await response.json();
 
@@ -1577,7 +1524,7 @@ async function buscarOtrasLicencias(pin) {
     }
 }
 
-// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET (VÍA PHP SEGURO) ---
+// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET ---
 async function consultarReciboIntranet(dni, legajo) {
     addMessage("Validando identidad y buscando recibos...", "bot");
     showTyping();
@@ -1615,14 +1562,12 @@ async function consultarReciboIntranet(dni, legajo) {
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Si no hay un nombre guardado, el bot pide el nombre. Si ya lo hay, muestra el menú principal.
     if (!userName) {
         addMessage("¡Hola! 👋 Soy tu asistente municipal. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
     } else {
         showMenu('main');
     }
 
-    // Splash Screen
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
         if(splash) splash.classList.add('hidden');
@@ -1641,7 +1586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarAgendaDinamica();
     
     /* ==========================================================================
-       LÓGICA DE INSTALACIÓN PWA (ANDROID / PC)
+       LÓGICA DE INSTALACIÓN PWA
        ========================================================================== */
     let deferredPrompt; 
 
