@@ -1611,4 +1611,4 @@ document.addEventListener('DOMContentLoaded', () => {
         const installBtn = document.getElementById('installBtn');
         if(installBtn) installBtn.classList.add('hidden');
     });
-});
+});;
