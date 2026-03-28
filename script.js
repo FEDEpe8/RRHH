@@ -14,7 +14,7 @@ let currentDniRecibo = "";
 // --- ENLACES A APIs EXTERNAS ---
 const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; 
 // ACÁ PEGAS TU LINK DE N8N:
-const WEBHOOK_N8N_IA = 'https://localhost/webhook-test/RRHH';
+const WEBHOOK_N8N_IA = 'http://localhost/webhook-test/RRHH';
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
 
 // --- CONSTANTES ---
