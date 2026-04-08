@@ -1,310 +1,970 @@
-// ==========================================================================
-// SCRIPT PRINCIPAL: PORTAL INTERNO RRHH (SOLO RRHH)
-// ==========================================================================
+/* ==========================================================================
+   SCRIPT PRINCIPAL: MUNIBOT (INTEGRACIÓN N8N + AVATAR + VOZ)
+   ========================================================================== */
 
-// --- VARIABLES DE ESTADO ---
-let userName = localStorage.getItem('rrhh_user_name') || "";
-let currentPath = ['main'];
-let isBotThinking = false;
-let isAwaitingPin = false; 
-const PIN_PRUEBA = ["1234"]; 
-let currentPin = ""; 
-const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
-
-// --- CONSTANTES ---
-const IMG_BOT_NORMAL = 'logo.png';
-const IMG_BOT_PENSANDO = 'logo.png';
-
-// --- CONFIGURACIÓN DE MENÚS (SOLO RRHH) ---
-const MENUS = {
-    main: {
-        title: (name) => `¡Hola <b>${name}</b>! 👋 Bienvenido al Portal Interno de RRHH. ¿En qué puedo ayudarte hoy?`,
-        options: [
-            { id: 'medicina_menu', label: '⚕️ Medicina Laboral' },
-            { id: 'sueldos_menu', label: '💰 Sueldos y Aguinaldo' },
-            { id: 'licencias_menu', label: '📅 Vacaciones y Licencias' },
-            { id: 'tramites_menu', label: '📝 Certificados y Trámites' },
-            { id: 'soy_municipal', label: '🎁 Beneficios Soy Municipal' },
-            { id: 'btn_pedir_pin', label: '🔐 Acceso Referentes RRHH' }
-        ]
-    },
-    menu_referentes_exclusivo: {
-        title: () => '🔐 Panel de Referentes RRHH:',
-        options: [
-            { id: 'novedades', label: '⏰ Entrega de Novedades', type: 'leaf', apiKey: 'info_novedades' },
-            { id: 'licencias_area', label: '📊 Ver licencias Medicas', type: 'leaf', apiKey: 'licencias_area_info' },
-            { id: 'otras_licencias_dinamico', label: '🌴 Ver Otras licencias (Vacaciones, Maternidad, etc;)' },
-            { id: 'back', label: '⬅️ Salir del panel' }
-        ]
-    },
-    medicina_menu: {
-        type: 'card',
-        title: () => '⚕️ Medicina Laboral',
-        image: 'medicina_laboral.png',
-        footer: 'Departamento de Medicina Laboral', 
-        description: `Para consultas médicas laborales, turnos o información sobre protocolos de salud en el ámbito laboral, puedes acceder al Departamento de Medicina Laboral a través del WhatsApp oficial. 
-            Estamos para ayudarte con cualquier consulta relacionada con tu salud laboral.
-            <br><br><a href="https://wa.me/5492241461777" target="_blank"
-        class="wa-btn" style="background-color: #25D366 !important; color: white;
-        text-align: center; display: block; margin-top: 3px;">📞 Contactar por WhatsApp</a><br><br></br>`,
-        options: [{ id: 'back', label: '⬅️ Volver' }]
-    },
-    sueldos_menu: {
-        title: () => '💰 Consultas de Haberes:',
-        options: [
-            { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' }, 
-            { id: 'info_sac', label: '💸 Información Aguinaldo', type: 'leaf', apiKey: 'info_sac' },
-            { id: 'back', label: '⬅️ Volver' }
-        ]
-    },
-    licencias_menu: {
-        title: () => '📅 Gestión de Licencias Laborales:',
-        options: [
-            { id: 'vacas', label: '🏖️ Mis Vacaciones', type: 'leaf', apiKey: 'info_vacaciones' },
-            { id: 'lic_med', label: '🚑 Licencias Médicas', type: 'leaf', apiKey: 'info_licencias' },
-            { id: 'back', label: '⬅️ Volver' }
-        ]
-    },
-    tramites_menu: {
-        title: () => '📝 Trámites de Personal:',
-        options: [
-            { id: 'esc', label: '🎒 Escolaridad', type: 'leaf', apiKey: 'info_escolaridad' },
-            { id: 'back', label: '⬅️ Volver' }
-        ]
-    },
-    soy_municipal: {
-        title: () => 'Beneficios del Programa Soy Municipal:',
-        options: [
-             { id: 'soy_como', label: '📋 ¿Cómo acceder?', type: 'leaf', apiKey: 'info_acceder' },
-            { id: 'soy_desc', label: '🎁 Locales adheridos', type: 'leaf', apiKey: 'info_soy_municipal' },
-            { id: 'back', label: '⬅️ Volver' }
-        ]
-    }
-};
-
-// --- RESPUESTAS (BASE DE DATOS INTEGRADA - SOLO RRHH) ---
-const RES = {
-    'licencias_area_info': `
-        <div class="info-card">
-            <strong>📊 Licencias en mi Área</strong><br><br>
-            Aquí podrás consultar un resumen de las licencias activas en tu área, incluyendo tipo de licencia, fechas y estado de aprobación.<br><br>
-            📋 <b>Información mostrada:</b><br>
-            - Nombre del empleado<br>
-            - Tipo de licencia (vacaciones, médica, etc.)<br>
-            - Fecha de inicio y fin<br>
-            - Estado (aprobada, pendiente, rechazada)<br><br>
-            📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
-            📞 <b>Contacto RRHH:</b> Para consultas específicas, contactá a RRHH al <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a>
-        </div>`,
-
-    'info_otras_licencias': `
-        <div class="info-card">
-            <strong>🚑 Otras Licencias</strong><br><br>
-            Aquí podrás consultar información sobre otras licencias, como vacaciones, maternidad, entre otras.<br><br>
-            📋 <b>Información mostrada:</b><br>
-            - Nombre del empleado<br>
-            - Tipo de licencia<br>
-            - Fecha de inicio y fin<br>
-            - Estado (aprobada, pendiente, rechazada)<br><br>
-            📌 <b>Confidencialidad:</b> Solo podrás ver las licencias de los empleados de tu área directa.<br><br>
-           📞 <b>Contacto Oficina de Capital Humano:</b> Para consultas específicas, contactár al <a href="https://wa.me/5492241493410" target="_blank" class="wa-btn">
-            💬 WhatsApp 49-3410</a>
-        </div>`,
-
-    'info_novedades': `
-        <div class="info-card">
-            🚧 <b>Entrega de Novedades</b><br>
-            Por medio de la presente, se informa el cronograma con las fechas límite para la entrega y carga de novedades correspondientes a la liquidación del mes en curso.<br><br>
-            <span style="color: red;">
-           📅 <b>Horas Extras:</b><b> Lunes 9 de marzo de 2026</b><br>
-           📅 <b>Personal Docente:</b><b> Viernes 13 de marzo de 2026</b><br>
-           📅 <b>Sueldos (Novedades generales):</b><b> Jueves 19 de marzo de 2026</b><br>
-           </span>
-            Se solicita a todas las áreas respetar estrictamente estos plazos.<br><br>
-        </div>`,
-
-    'info_recibos': `
-        <div class="info-card">
-            <strong>💰 Información de Sueldos</strong><br><br>
-            Aquí podrás consultar información relacionada con tus sueldos y beneficios.<br><br>
-            📅 <b>Período:</b> Mensual.<br>
-            📎 <b>Formato:</b> PDF o Documento Digital.<br>
-            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
-        </div>`,
-
-    'info_sac': `
-        <div class="info-card">
-            <strong>💰 Información de SAC (Aguinaldo)</strong><br><br>
-            Aquí podrás consultar información relacionada con tu aguinaldo.<br><br>
-            📅 <b>Primer Medio Aguinaldo (Junio):</b> Suele acreditarse entre el 23 y el 27 de junio.<br>
-            📅 <b>Segundo Medio Aguinaldo (Diciembre):</b> Generalmente se deposita alrededor del 20 de diciembre.<br>
-            📌 <b>Acreditación:</b> Gracias al uso de <b>FONDOS PROPIOS</b>, el municipio <b>ASEGURA</b> el depósito antes de que termine el mes.
-        </div>`,
-
-    'info_escolaridad': `
-        <div class="info-card">
-            <strong>🎒 Certificado de Escolaridad</strong><br><br>
-            Recordá que para cobrar la Ayuda Escolar Anual es obligatorio presentar el certificado.<br><br>
-            <b>A partir de la fecha 25/02/2026</b>, y previo al comienzo de clases, se abonara el subsidio correspondiente.<br><br>
-            📅 <b>Vencimiento:</b> 30 de Junio los que ya presentaron el certificado en 2025<br>
-            📆 <b>Vencimiento:</b> 30 de Abril los que cobran por primera vez.<br>
-            📎 <b>Entrega:</b> Oficina de Liquidaciones de 08:00hs - 13:00hs. (Cramer 270, Planta Baja).<br>
-        </div>`,
-
-    'info_vacaciones': `
-        <div class="info-card">
-            <strong>🏖️ Vacaciones Anuales</strong><br><br>
-            Las vacaciones se otorgan según el régimen de cada empleado y la antigüedad en el cargo.<br><br>
-            📅 <b>Período:</b> Se otorgan entre Octubre y Octubre.<br>
-            📎 <b>Solicitud:</b> A través del referente de RRHH de tu área.<br>
-            📎 <b>Duración (según antigüedad al 31/12):</b> <br>
-               - Menos de 5 años: 14 días corridos.<br>
-               - 5 a 10 años: 21 días corridos.<br>
-               - 10 a 20 años: 28 días corridos.<br>
-               - Más de 20 años: 35 días corridos.<br>
-        </div>`,
-
-    'info_licencias': `
-        <div class="info-card">
-            <strong>🚑 Licencias Médicas</strong><br><br>
-            Si estás enfermo, debés avisar 24:00 hs. antes de la jornada laboral.<br><br>
-            📞 <b>Auditoría Médica:</b> <a href="https://wa.me/5492241461777" target="_blank" class="wa-btn">💬 WhatsApp 46-1777</a><br>
-            📍 <b>Lugar:</b> Medicina Laboral Dorrego y Bolivar (Ex centro cívico).<br>
-            <i>Recordá llevar certificado con diagnóstico y días de reposo.</i>
-        </div>`,
-
-      'info_soy_municipal': `
-        <div class="info-card">
-            <strong>🛍️ Locales Adheridos al Programa Soy Municipal</strong><br><br>
-            <b>Alimentos:</b><br>
-            🛒SuperChas (en sus 3 sucursales)<br>
-            🍝Pastas La Bianca<br>🛒Almacén de Descuentos<br>🥗Verduleria y fiambreria “Santa Elena”.<br>
-            <b>Gastronomía</b><br>🍝La Fonda<br>🍜La Roti<br>🍕Il Formagio<br>🍕 Pizzeria Pumm
-            <b>Carnicería</b><br>🥩La Carniceria<br>
-            <b>Heladerías</b><br>🍧Grido (en sus dos direcciones)<br>🍨Brinato<br>
-            <b>Belleza y bienestar</b><br>💇🏻‍♀️Lion Peluqueria<br>💇Multiespacio Capilar<br>🧴Ana Chrestia Cosmiatra<br>💈Peluquería Ídolos<br>
-            <b>Indumentaria</b><br>👗Vado Di Piu<br>👠Stock Calzados<br>👔Bumerang<br>🦺Indulab<br>
-            <b>Educación</b><br>💂🏼‍♂️Join In, school of English<br>2️⃣1️⃣Universidad Siglo XXI<br>
-            <b>Aire Libre</b><br>🏕️Camping Camino del Sol<br>
-            <b>Servicios</b><br>🖨️Imprenta El Rayo<br>⚰️Funeraria Portela<br>
-            <b>Hogar y construcción</b><br>🧱Corralon el Chaqueño<br>🫟Pintureria Alvear<br>🔩La casa del Tornillo<br>
-            <b>Juguetería y Librería</b><br>🪁Chiquilandia<br>
-        </div>`,
-    'info_acceder': `
-        <div class="info-card">
-            <strong>🎁 Beneficios Soy Municipal</strong><br>
-            El programa "Soy Municipal" ofrece descuentos exclusivos.<br><br>
-            📋 <b>¿Cómo acceder?</b><br>
-            1️⃣ Solicitala en la oficina de Recursos Humanos, en el Palacio Municipal.<br>
-            2️⃣ Presentá tu credencial de empleado municipal en los locales adheridos.<br><br>
-        </div>`,
-
-    'error_busqueda': `
-        <div class="info-card" style="border-left: 5px solid #ffc107;">
-            <div style="font-size: 1.1rem; margin-bottom: 8px;">🤔 <b>No encontré eso</b></div>
-            <p style="font-size: 0.9rem; margin-bottom: 15px; color: #333;">
-                Asegurate de estar consultando sobre temas de Recursos Humanos (Sueldos, Licencias, Certificados, etc).
-            </p>
-            <button onclick="resetToMain()" class="menu-btn" style="width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                ☰ Ver Menú de RRHH
-            </button>
-        </div>`
-};
-
-// --- PALABRAS CLAVE (BUSCADOR INTELIGENTE - SOLO RRHH) ---
-const PALABRAS_CLAVE = {
-    'rrhh': { id: 'main', label: '👥 Recursos Humanos' },
-    'menu': { id: 'main', label: '🏠 Menú Principal' },
-    'recibo': { apiKey: 'info_recibos', label: '📄 Recibos de Sueldo' },
-    'extras': { apiKey: 'info_recibos', label: '📄 Extras' },
-    'liquidacion': { apiKey: 'info_recibos', label: '📄 Liquidaciones' },
-    'sueldo': { id: 'sueldos_menu', label: '💰 Sueldos' },
-    'aguinaldo': { apiKey: 'info_sac', label: '💰 Aguinaldo' },
-    'sac': { apiKey: 'info_sac', label: '💰 SAC' },
-    'vacaciones': { apiKey: 'info_vacaciones', label: '📅 Vacaciones' },
-    'licencia': { apiKey: 'info_licencias', label: '📅 Licencias Médicas' },
-    'medica': { apiKey: 'info_licencias', label: '🚑 Medicina Laboral' },
-    'enfermo': { apiKey: 'info_licencias', label: '🚑 Parte de Enfermo' },
-    'beneficios': { apiKey: 'info_soy_municipal', label: '🎁 Beneficios Soy Municipal' },
-    'soy_municipal': { apiKey: 'info_soy_municipal', label: '🎁 Beneficios Soy Municipal' },
-    'certificado': { apiKey: 'info_escolaridad', label: '🎒 Certificado' },
-    'escolaridad': { apiKey: 'info_escolaridad', label: '🎒 Escolaridad' },
-    'maternidad': { apiKey: 'info_otras_licencias', label: '🚑 Maternidad / Otras licencias' },
-    'referente': { id: 'btn_pedir_pin', label: '🔐 Acceso Referentes' }
-};
-
-// --- FUNCIONES VISUALES ---
-function setMuniBotState(state) {
-    const avatar = document.getElementById('avatar-bot');
-    if (avatar) avatar.src = state === 'thinking' ? IMG_BOT_PENSANDO : IMG_BOT_NORMAL;
+/* --- PWA: REGISTRO DEL SERVICE WORKER --- */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('✅ PWA: Service Worker registrado listos para instalar'))
+            .catch(err => console.error('❌ PWA: Error al registrar', err));
+    });
 }
 
-function showTyping() {
-    isBotThinking = true;
-    setMuniBotState('thinking');
-    const container = document.getElementById('chatMessages');
-    const wrapper = document.createElement('div');
-    wrapper.id = 'typingWrapper';
-    wrapper.innerHTML = `<div class="message bot"><span class="typing-dots">Escribiendo</span></div>`;
-    container.appendChild(wrapper);
-    container.scrollTop = container.scrollHeight;
-}
+/* --- ACCESIBILIDAD: RECONOCIMIENTO Y SÍNTESIS DE VOZ --- */
+let vozActivada = false;
 
-function addMessage(content, side = 'bot', options = null) {
-    if (side === 'bot') {
-        isBotThinking = false;
-        const t = document.getElementById('typingWrapper');
-        if (t) t.remove();
-        setMuniBotState('normal');
-    }
-    const container = document.getElementById('chatMessages');
-    const wrapper = document.createElement('div');
-    wrapper.className = `message-wrapper ${side}`;
-    wrapper.innerHTML = `<div class="message ${side}">${content}</div>`;
-    container.appendChild(wrapper);
-
-    if (options) {
-        const optDiv = document.createElement('div');
-        optDiv.className = 'options-container';
-        options.forEach(o => {
-            const btn = document.createElement('button');
-            btn.className = 'option-button';
-            btn.innerText = o.label;
-            btn.onclick = () => handleAction(o);
-            optDiv.appendChild(btn);
-        });
-        container.appendChild(optDiv);
-    }
-    container.scrollTop = container.scrollHeight;
-}
-
-function showMenu(key) {
-    const m = MENUS[key];
-    if(m) {
-        if (m.type === 'card') {
-            const cardHtml = `
-                <div class="info-card" style="padding:0; overflow:hidden;">
-                    <img src="${m.image}" style="width:100%; height:auto; display:block;">
-                    <div style="padding:15px;">
-                        <h3 style="margin:0 0 5px 0; color:var(--primary);">${typeof m.title === 'function' ? m.title() : m.title}</h3>
-                        <small style="color:#666;">${m.subtitle || ''}</small>
-                        <p style="margin:10px 0; font-size:0.9rem;">${m.description}</p>
-                        <hr style="border:0; border-top:1px dashed #ccc; margin:10px 0;">
-                        <small><i>${m.footer}</i></small>
-                    </div>
-                </div>`;
-            addMessage(cardHtml, 'bot', m.options);
-        } else {
-            addMessage(typeof m.title === 'function' ? m.title(userName) : m.title, 'bot', m.options);
-        }
+function toggleVoz() {
+    vozActivada = !vozActivada;
+    document.getElementById('voiceToggle').innerText = vozActivada ? '🔊' : '🔇';
+    if (vozActivada) {
+        hablar("Voz de MuniBot activada.");
     } else {
-        console.error("Menú no encontrado:", key);
-        showMenu('main');
+        window.speechSynthesis.cancel();
     }
 }
 
-// --- CONEXIÓN CON GOOGLE SHEETS (LOGS) ---
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxsykXV0qe7rta50BrM2i8flXktxx90NVpnZH3wHWwp6c0ymoioEcAeuUGjLm8y6Jpd/exec';
+function hablar(textoHtml) {
+    if (!vozActivada) return;
+    let div = document.createElement("div");
+    div.innerHTML = textoHtml;
+    let textoLimpio = div.textContent || div.innerText || "";
+    
+    // Filtramos emojis
+    textoLimpio = textoLimpio.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
+
+    const mensaje = new SpeechSynthesisUtterance(textoLimpio);
+    mensaje.lang = 'es-AR'; 
+    mensaje.rate = 1.0; 
+    window.speechSynthesis.speak(mensaje);
+}
+
+// Configuración del Micrófono
+const micBtn = document.getElementById('micButton');
+const inputArea = document.getElementById('userInput');
+const ReconocimientoVoz = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (ReconocimientoVoz) {
+    const reconocimiento = new ReconocimientoVoz();
+    reconocimiento.lang = 'es-AR';
+    reconocimiento.interimResults = false;
+    
+    if(micBtn) {
+        micBtn.onclick = () => {
+            reconocimiento.start();
+            micBtn.classList.add('recording');
+            inputArea.placeholder = "Escuchando... 👂";
+        };
+    }
+    
+    let procesandoVoz = false; 
+
+    reconocimiento.onresult = (evento) => {
+        const transcripcion = evento.results[0][0].transcript;
+        inputArea.value = transcripcion;
+        
+        if (procesandoVoz) return; 
+        procesandoVoz = true; 
+        
+        setTimeout(() => {
+            processInput(); 
+            procesandoVoz = false;
+        }, 400);
+    };
+    
+    reconocimiento.onend = () => {
+        if(micBtn) micBtn.classList.remove('recording');
+        if(inputArea) inputArea.placeholder = "Escribí un mensaje...";
+    };
+    
+    reconocimiento.onerror = (evento) => {
+        console.error("Error en micrófono: ", evento.error);
+        if(micBtn) micBtn.classList.remove('recording');
+        if(inputArea) inputArea.placeholder = "Escribí un mensaje...";
+    };
+} else {
+    if(micBtn) micBtn.style.display = 'none';
+}
+
+/* --- FUNCIONES DEL MODAL DE INFO --- */
+function showInfo() { document.getElementById('infoModal').style.display = 'flex'; }
+function closeInfo() { document.getElementById('infoModal').style.display = 'none'; }
+window.onclick = function(event) {
+    const modal = document.getElementById('infoModal');
+    if (event.target === modal) { modal.style.display = "none"; }
+}
+
+/* --- 1. CONFIGURACIÓN Y ESTADO --- */
+let userName = localStorage.getItem('chas_user_name') || ""; 
+let userNeighborhood = localStorage.getItem('chas_user_neighborhood') || ""; 
+let userAge = localStorage.getItem('chas_user_age') || ""; 
+let currentPath = ['main']; 
+let isBotThinking = false; 
+let interaccionIniciada = false; 
+
+// --- ENLACES A APIs EXTERNAS ---
+const WEBHOOK_N8N = 'https://n8n.chascomus.gob.ar/webhook/MuniBot';
+
+/* --- CONFIGURACIÓN DE LA MASCOTA ANIMADA --- */
+const IMG_BOT_NORMAL = 'img-bot-normal.png';   
+
+const PALABRAS_OFENSIVAS = ["puto", "puta", "mierda", "verga", "pija", "concha", "chota", "culo", "boludo", "boluda", "pelotudo", "pelotuda", "idiota", "tarado", "tarada"]; 
+
+const PALABRAS_CLAVE = {};
+
+const BARRIOS = ["SAN CAYETANO","COMI PINI","ACCESO NORTE","EL OBISPADO","LOMAS ALTAS",
+    "BARRIO JARDIN","VILLA LUJAN","EL ALGARROBO","LA NORIA CHICA","LA ESMERALDA",
+    "SAN LUIS","LA CONCORDIA","ESCRIBANO","SAN JOSE","CENTRO","EL HUECO","FATIMA",
+    "SAN JUAN BAUTISTA","LAS VIOLETAS","BALDOMERO FERNANDEZ MORENO","GALLO BLANCO",
+    "EL IPORA","LA PAMPITA","ANAHI","EL PORTEÑO","ESTEBAN ECHEVERRIA","LOS AROMOS",
+    "BARRIO PARQUE GIRADO","CHASCOMUS","CABALLO BLANCO","30 DE MAYO","LOS SAUCES","SAN NICOLAS"]; 
+
+/* --- FUNCIÓN CONTROL DE ESTADOS DEL AVATAR --- */
+function setChasBotState() {
+    const avatar = document.getElementById('avatar-bot');
+    if (!avatar) return;
+    avatar.src = IMG_BOT_NORMAL;
+}
+
+/* --- 2. RESPUESTAS Y MENÚS COMBINADOS --- */
+const MENUS = {
+    main: { 
+        title: (name) => `¡<b>${name}</b>! 👋 Soy el asistente virtual. Acá te dejo los accesos más rápidos de hoy:`, 
+        options: [
+            { id: 'oea_shortcut', label: '👀 Ojos en Alerta', type: 'leaf', apiKey: 'ojos_en_alerta' },
+            { id: 'ag_shortcut', label: '🎭 Agenda Cultural', type: 'leaf', apiKey: 'agenda_dinamica' }, 
+            { id: 'h_shortcut', label: '📅 Turnos Hospital', type: 'leaf', apiKey: 'h_turnos' },
+            { id: 'politicas_gen_shortcut', label: '💜 GÉNERO (Urgencias)', type: 'leaf', apiKey: 'politicas_gen' },
+            { id: 'full_menu', label: '☰ VER MENÚ COMPLETO' }
+        ]
+    },
+    full_menu: {
+        title: () => '📱 Menú Completo de Servicios Municipales:',
+        options: [
+            { id: 'politicas_gen', label: '💜 GÉNERO (Urgencias)', type: 'leaf', apiKey: 'politicas_gen' },
+            { id: 'politicas_comu', label: '🛍️ Módulos (alimentos)', type: 'leaf', apiKey: 'asistencia_social' },
+            { id: 'desarrollo_menu', label: '🤝 Desarrollo Social' },
+            { id: 'ojos_en_alerta', label: '👁️ Ojos en Alerta (Seguridad)', type: 'leaf', apiKey: 'ojos_en_alerta' },
+            { id: 'el_digital', label: '📰 Kiosco Digital' },
+            { id: 'educacion', label: '📚 Educación Municipal', type: 'submenu'},
+            { id: 'turismo', label: '🏖️ Turismo' },
+            { id: 'deportes', label: '⚽ Deportes' },
+            { id: 'salud', label: '🏥 Salud' },
+            { id: 'obras', label: '🚧 Reclamos 147' },
+            { id: 'seguridad', label: '🛡️ Seguridad' },
+            { id: 'produccion', label: '🏭 Producción y Empleo' },
+            { id: 'habilitaciones', label: '💰 Habilitaciones' },
+            { id: 'omic', label: '🏦 Denuncias Omic', type: 'leaf', apiKey: 'omic_info' },
+            { id: 'cultura', label: '🎭 Cultura y Agenda' },
+            { id: 'habitat', label: '🏡 Reg demanda Habitacional', type: 'submenu' },
+            { id: 'pago_deuda', label: '🅿️ago: Auto, Agua, Inmueble', type: 'submenu' },
+            { id: 'contacto_op', label: '☎️ Hablar con Operador', type: 'leaf', apiKey: 'contacto_gral' }
+        ]
+    },
+    ojos_en_alerta: {
+        title: () => '👁️ Ojos en Alerta:',
+        options: [ { id: 'oea_link', label: '🔗 Contacto WhatsApp', link: 'https://wa.me/5492241557444' } ]
+    },
+    cultura: {
+        title: () => '🎭 Agenda Cultural:',
+        options: [ { id: 'ag_actual', label: '📅 agenda dinámica', type: 'leaf', apiKey: 'agenda_dinamica' } ]
+    },
+    el_digital: {
+        type: 'card',
+        title: () => '🗞️ Kiosco Digital',
+        subtitle: 'Noticias y Boletín Oficial',
+        image: 'el_digi.png', 
+        footer: 'Portal Unificado',
+        description: `Accedé a la información local y oficial desde aquí:<br><br>📰 <b>El Digital Chascomús</b><br><i>Noticias y actualidad al instante.</i><br><a href="https://www.eldigitalchascomus.com.ar/" target="_blank" class="wa-btn" style="background-color: #03045e !important; color: white; text-align: center; display: block; margin-top: 5px;">🚀 Leer El Digital</a><hr style="border-top: 1px dashed #ccc; margin: 15px 0;">📜 <b>Boletín Oficial (SIBOM)</b><br><i>Decretos y normativas municipales.</i><br><a href="https://sibom.slyt.gba.gob.ar/cities/31/" target="_blank" class="wa-btn" style="background-color: #7f8c8d !important; color: white; text-align: center; display: block; margin-top: 5px;">🏛️ Ver Boletín Oficial</a>`,
+        options: [] 
+    },
+    educacion: {
+        title: () => '📚 Educación:',
+        options: [
+            { id: 'edu_info', label: '🎓 Educación y Tribunal', type: 'leaf', apiKey: 'educacion_info' },
+            { id: 'ap_info', label: '📢 Actos Públicos (Horarios)', type: 'leaf', apiKey: 'actos_publicos' },
+            { id: 'cartelera_web', label: '📊 Cartelera y Listados', type: 'leaf', apiKey: 'cartelera_docente' },
+        ]
+    },
+    turismo: {
+        title: () => 'Turismo y Cultura:',
+        options: [
+            { id: 't_info', label: 'ℹ️ Oficinas y Contacto', type: 'leaf', apiKey: 'turismo_info' },
+            { id: 't_link', label: '🔗 Web de Turismo', link: 'https://linktr.ee/turismoch', target: '_blank' }
+        ]
+    },
+    deportes: {
+        title: () => 'Deportes:',
+        options: [
+            { id: 'd_info', label: '📍 Dirección de Deportes', type: 'leaf', apiKey: 'deportes_info' },
+            { id: 'd_calle', label: '🏃 Circuito de Calle', type: 'leaf', apiKey: 'deportes_circuito' },
+            { id: 'trail_info', label: '🚴 Trail', type: 'leaf', apiKey: 'deportes_trail' },
+            { id: 'aguas_abiertas', label: '🏊 Aguas Abiertas', type: 'leaf', apiKey: 'info_deportes_aguas' }
+        ]
+    },
+    desarrollo_menu: {
+        title: () => 'Desarrollo Social y Comunitaria:', 
+        options: [
+            { id: 'mediacion', label: '⚖️ Mediación Vecinal', type: 'leaf', apiKey: 'mediacion_info' },
+            { id: 'uda', label: '📍 Puntos UDA', type: 'leaf', apiKey: 'uda_info' },
+            { id: 'ninez', label: '👶 Niñez', type: 'leaf', apiKey: 'ninez' }
+        ]
+    },
+    habitat: {
+        title: () => 'Secretaría de Hábitat:',
+        options: [
+            { id: 'habitat', label: '🔑 Info de Hábitat', type: 'leaf', apiKey: 'info_habitat' },
+            { id: 'hab_info', label: '📍 Dirección y Contacto', type: 'leaf', apiKey: 'habitat_info' },
+            { id: 'hab_plan', label: '🏘️ Planes Habitacionales', type: 'leaf', apiKey: 'habitat_planes' }
+        ]
+    },
+    salud: { 
+        title: () => 'Gestión de Salud Pública:', 
+        options: [
+            { id: 'centros', label: '🏥 CAPS (Salitas)', type: 'submenu' },
+            { id: 'hospital_menu', label: '🏥 Hospital', type: 'submenu' },
+            { id: 'f_lista', label: '💊 Farmacias y Turnos', type: 'leaf', apiKey: 'farmacias_lista' },
+            { id: 'zoonosis', label: '🐾 Zoonosis', type: 'leaf', apiKey: 'zoo_rabia' },
+            { id: 'vac_hu', label: '💉 Vacunatorio', type: 'leaf', apiKey: 'vacunacion_info' }
+        ]
+    },
+    centros: { 
+        title: () => 'Centros de Atención Primaria (CAPS):',
+        options: [
+            { id: 'c_map', label: '📍 Ver Ubicaciones (Mapas)', type: 'leaf', apiKey: 'caps_mapas' },
+            { id: 'c_wa', label: '📞 Números de WhatsApp', type: 'leaf', apiKey: 'caps_wa' }
+        ]
+    },
+    hospital_menu: {
+        title: () => 'Hospital Municipal:',
+        options: [
+            { id: 'h_tur', label: '📅 WhatsApp Turnos', type: 'leaf', apiKey: 'h_turnos' },
+            { id: 'h_espec_menu', label: '🩺 Especialidades', type: 'submenu' },
+            { id: 'h_guardia', label: '🚨 Guardia e Info', type: 'leaf', apiKey: 'h_info' }
+        ]
+    },
+    h_espec_menu: {
+        title: () => '🩺 Seleccioná la especialidad para ver los días:',
+        options: [
+            { id: 'esp_pediatria', label: '👶 Pediatría', type: 'leaf', apiKey: 'info_pediatria' },
+            { id: 'esp_clinica', label: '🩺 Clínica Médica', type: 'leaf', apiKey: 'info_clinica' },
+            { id: 'esp_gineco', label: '🤰 Ginecología / Obstetricia', type: 'leaf', apiKey: 'info_gineco' },
+            { id: 'esp_cardio', label: '❤️ Cardiología', type: 'leaf', apiKey: 'info_cardio' },
+            { id: 'esp_trauma', label: '🦴 Traumatología', type: 'leaf', apiKey: 'info_trauma' },
+            { id: 'esp_oftalmo', label: '👁️ Oftalmología', type: 'leaf', apiKey: 'info_oftalmo' },
+            { id: 'esp_nutri', label: '🍎 Nutrición', type: 'leaf', apiKey: 'info_nutri' },
+            { id: 'esp_cirugia', label: '🔪 Cirugía', type: 'leaf', apiKey: 'info_cirugia' },
+            { id: 'esp_neuro', label: '🧠 Neurología / Psiquiatría', type: 'leaf', apiKey: 'info_neuro_psiq' }
+        ]
+    },
+    seguridad: { 
+        title: () => 'Seguridad y Trámites:', 
+        options: [
+            { id: 'seg_video_a', label: '🎥 Ver Video alcohol al volante', type: 'leaf', apiKey: 'alcohol_info' },
+            { id: 'pamuv', label: '🆘 Asistencia Víctima (PAMUV)', type: 'leaf', apiKey: 'pamuv' },
+            { id: 'seg_video_b', label: '🎥 Ver Video Instructivo Basapp ', type: 'leaf', apiKey: 'Basapp_info' },
+            { id: 'apps_seg', label: '📲 Descargar Apps (Basapp y SEM)', type: 'leaf', apiKey: 'apps_seguridad' }, 
+            { id: 'def_civil', label: '🌪️ Defensa Civil (103)', type: 'leaf', apiKey: 'defensa_civil' },
+            { id: 'lic_tramite', label: '🪪 Licencia (Carnet)', type: 'leaf', apiKey: 'lic_turno' },
+            { id: 'seg_academia', label: '🚗 Academia Conductores', type: 'leaf', apiKey: 'seg_academia' },
+            { id: 'document_info', label: '🎥 Ver Video Documentación de Tránsito', type: 'leaf', apiKey: 'document_info' },
+            { id: 'seg_infracciones', label: '⚖️ Mis Infracciones', type: 'leaf', apiKey: 'seg_infracciones' },
+            { id: 'poli', label: '📞 Monitoreo y Comisaría', type: 'leaf', apiKey: 'poli' }
+        ]
+    },
+    habilitaciones: {
+        title: () => 'Gestión de Habilitaciones:',
+        options: [
+            { id: 'hab_video', label: '🎥 Ver Video Instructivo', type: 'leaf', apiKey: 'hab_video_info' },
+            { id: 'hab_gral', label: '🏢 Comercio e Industria', type: 'leaf', apiKey: 'hab_gral' },
+            { id: 'hab_eventos', label: '🎉 Eventos y Salones', type: 'leaf', apiKey: 'hab_eventos' },
+            { id: 'hab_espacio', label: '🍔 Patios y Carros (Foodtruck)', type: 'leaf', apiKey: 'hab_espacio' },
+            { id: 'hab_reba', label: '🍷 REBA (Alcohol)', type: 'leaf', apiKey: 'hab_reba' }
+        ]
+    },
+    pago_deuda: {
+        title: () => 'Pago de Deudas y Boletas:',
+        options: [   
+            { id: 'deuda_video', label: '🎥 Ver Video Instructivo', type: 'leaf', apiKey: 'deuda_video_info' },     
+            { id: 'deuda', label: '🔍 Ver Deuda / Pagar', type: 'leaf', apiKey: 'deuda' },
+            { id: 'agua', label: '💧 Agua', type: 'leaf', apiKey: 'agua' },
+            { id: 'boleta', label: '📧 Boleta Digital', type: 'leaf', apiKey: 'boleta' },
+            { id: 'consulta_tributaria', label: '💸 Consulta Tributaria', type: 'leaf', apiKey: 'consulta_tributaria' }
+        ]
+    },
+    produccion: {
+        title: () => '🏭 Producción y Empleo:',
+        options: [
+            { id: 'prod_eco_social', label: '🟢 Economía Social', type: 'submenu' },
+            { id: 'prod_of_empleo', label: '🔵 Oficina de Empleo (Busco Trabajo)', type: 'submenu' },
+            { id: 'prod_empresas', label: '🟠 Empresas y Emprendedores', type: 'submenu' },
+            { id: 'prod_empleadores', label: '🟣 Empleadores (Busco Personal)', type: 'submenu' },
+            { id: 'prod_manipulacion', label: '🔴 Carnet Manipulación Alimentos', type: 'leaf', apiKey: 'res_manipulacion' },
+            { id: 'prod_contacto', label: '📍 Contacto y Dirección', type: 'leaf', apiKey: 'prod_contacto' }
+        ]
+    },
+    prod_eco_social: {
+        title: () => '🟢 Economía Social:',
+        options: [
+            { id: 'pe_compre', label: '🤝 Compre Chascomús', type: 'leaf', apiKey: 'res_compre_chascomus' },
+            { id: 'pe_frescos', label: '🥦 Productores Alimentos Frescos', type: 'leaf', apiKey: 'res_prod_frescos' }
+        ]
+    },
+    prod_of_empleo: {
+        title: () => '🔵 Oficina de Empleo:',
+        options: [
+            { id: 'oe_inscripcion', label: '📝 Inscripción / Actualizar CV', type: 'leaf', apiKey: 'res_oe_inscripcion' },
+            { id: 'oe_promover', label: '♿ Programa Promover (Discapacidad)', type: 'leaf', apiKey: 'res_oe_promover' },
+            { id: 'oe_taller_cv', label: '📄 Taller Armado de CV', type: 'leaf', apiKey: 'res_oe_taller_cv' }
+        ]
+    },
+    prod_empresas: {
+        title: () => '🟠 Empresas y Emprendedores:',
+        options: [ { id: 'emp_chasco', label: '🚀 Chascomús Emprende', type: 'leaf', apiKey: 'res_emp_chasco' } ]
+    },
+    prod_empleadores: {
+        title: () => '🟣 Empleadores:',
+        options: [
+            { id: 'empl_busqueda', label: '🔎 Publicar Búsqueda Laboral', type: 'leaf', apiKey: 'res_empl_busqueda' },
+            { id: 'empl_madrinas', label: '🤝 Empresas Madrinas', type: 'leaf', apiKey: 'res_empl_madrinas' }
+        ]
+    },
+    obras: { 
+        title: () => 'Atención al Vecino 147:', 
+        options: [
+            { id: 'info_147', label: '📝 Iniciar Reclamo 147 (Chat), ℹ️ Info, Web y Teléfonos', type: 'leaf', apiKey: 'link_147' },
+            { id: 'poda', label: '🌿 Poda', type: 'leaf', apiKey: 'poda' },
+            { id: 'obras_basura', label: '♻️ Recolección', type: 'leaf', apiKey: 'obras_basura' }
+        ]
+    }
+};
+
+/* --- 4. RESPUESTAS ESTÁTICAS COMBINADAS --- */
+const RES = {
+    // --- GENERALES ---
+    'agenda_dinamica': `<div class="info-card">⚠️ <b>Cargando agenda...</b><br>Si esto no cambia en unos segundos, revisá tu conexión.</div>`,
+    'agenda_actual': `
+    <div class="info-card">
+        <strong>📅 AGENDA MARZO 2026</strong><br>
+        <i>¡Viví la cultura y el deporte en Chascomús!</i><br><br>
+        ⚫ <b>Dom 1 - 🎉 Proyección de película:</b><br>"LA ZORRA Y LA PAMPA" (Día del Ferroviario).<br>📍 C.C. Vieja Estación | 16 a 19 hs | 🎟️ Arancelado.<br><br>
+        ⚫ <b>Dom 1 - ⚽ Ciclismo:</b><br>"Chascomús a Pura Ruta".<br>📍 Circuito Juan Carlos Haedo | 09:00 hs.<br><br>
+        🔴 <span style="color: #e74c3c;"><b>Jue 5 y Vie 6 - 🎭 Visitas Dramatizadas:</b><br>Recorrido teatralizado histórico.<br>📍 Vieja Estación / Casa de Casco | 21:00 hs | 🎟️ $18.000.</span><br><br>
+        ⚫ <b>Sáb 7 - 🏊 Natación:</b><br>"Cruce de la Laguna" (3.000 mts).<br>📍 Club de Regatas | 13:00 hs (Largada).<br><br>
+        ⚫ <b>Dom 29 - 🚵 MTB:</b><br>"Desafío MTB Chascomús" (Rally 14k, 28k y 42k).<br>📍 Costanera | Horario a confirmar.<br><br>
+        <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+        🏛️ <b>ESPACIOS PERMANENTES:</b><br>• <b>Museos y Vieja Estación:</b> MAR a VIE 9-15hs / SAB y DOM 10-16 y 19-21hs.<br>• <b>Feria de Artesanos:</b> VIE (17hs), SAB y DOM (11hs) en Costanera y Perón.<br><br>
+        🔗 <b>INSCRIPCIONES Y LINKS:</b><br><a href="https://wa.me/5492241603414" target="_blank" class="wa-btn" style="background-color: #efe8e3ff !important; display: inline-block; padding: 5px 10px; border-radius: 5px; text-decoration: none; color: #25d366; font-weight: bold; border: 1px solid #25d366;">📲 Info por WhatsApp</a><br><br>
+        <a href="https://linktr.ee/visitasguiadas.turismoch" target="_blank" style="color: #2c3e50; font-weight: bold;">🔗 Linktree de Inscripciones</a>
+    </div>`,
+    'error_busqueda': `
+    <div class="info-card" style="border-left: 5px solid #ffc107;">
+        <div style="font-size: 1.1rem; margin-bottom: 8px;">🤔 <b>¡Ups! No encontré eso</b></div>
+        <p style="font-size: 0.9rem; margin-bottom: 15px; color: #333;">
+            Todavía estoy aprendiendo. ¿Probamos con otra palabra o querés ver el menú completo?
+        </p>
+        <button onclick="interaccionIniciada=true; resetToMain()" class="menu-btn" style="width: 100%; padding: 12px; background-color: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ☰ Ver Menú Completo
+        </button>
+    </div>`,
+    'educacion_info': `
+    <div class="info-card">
+        <strong>🎓 Educación, Infancias y Juventudes</strong><br>
+        <i>Subsecretario: Lic. Enrique Inciarte</i><br><br>
+        📍 <b>Dirección de Educación:</b><br>
+        Mendoza 95, esq. Moreno.<br>
+        ⏰ Lun a Vie de 8 a 14 hs.<br><br>
+        📞 <b>Vías de contacto:</b><br>
+        <div style="display:flex; gap:5px; flex-wrap:wrap; margin-top:5px;">
+            <a href="tel:02241430332" class="wa-btn" style="flex:1; background-color:#004a7c !important; text-align:center; min-width: 120px;">📞 Fijo 43-0332</a>
+           <a href="https://wa.me/5492241569898" target="_blank" class="wa-btn" style="flex:1; background-color:#25D366 !important; text-align:center; min-width: 120px;">
+           💬 WhatsApp 56-9898</a>
+        </div> <br> 📧 <a href="mailto:educacion@chascomus.gob.ar">educacion@chascomus.gob.ar</a><br>
+        <small><i>Admin: M. Lastero y L. Dellavalle</i></small>
+        <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+        ⚖️ <b>Tribunal de Clasificación Docente</b><br>
+        📅 Lunes y Miércoles 16 a 17:30 hs.<br>
+        👥 <i>Sallenave, Ganuza, Esain e Inciarte.</i><br><br>
+        📧 <a href="mailto:tribunalmunicipalchascomus@gmail.com" class="wa-btn" style="background-color:#e67e22 !important; display:block; text-align:center;">✉️ Email Tribunal</a>
+    </div>`,
+    'actos_publicos': `
+    <div class="info-card" style="border-left: 5px solid #2980b9;">
+        <strong>📢 Actos Públicos Presenciales (AP)</strong><br>
+        <i>Designación de cargos docentes</i><br><br>
+        📅 <b>¿Cuándo?</b><br>
+        Se realizan todos los días (Lun a Vie).<br><br>
+        ⏰ <b>Horarios (Puntual):</b><br>
+        ☀️ Mañana: <b>08:45 hs</b><br>
+        🕐 Tarde: <b>12:45 hs</b><br><br>
+        📍 <b>Lugar:</b> Mendoza 95.<br><br>
+        ⚠️ <b>Requisito Excluyente:</b><br>
+        Presentarse con <b style="color:#c0392b; text-decoration: underline;">DNI FÍSICO</b>.<br>
+        <small>(No se acepta DNI digital en el celular).</small><br><br>
+        <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+        👤 <b>¿Envías un representante?</b><br>
+        Debe presentar sin excepción:<br><br>
+        1️⃣ <a href="https://docs.google.com/document/d/1EMRh4aS-bGvaayc7RrXReb950zW4dXHrOxODatNoark/edit?tab=t.0&usp=sharing" target="_blank" style="color: #2980b9; font-weight: bold; text-decoration: underline;">📄 Descargar Acta Poder</a><br>
+        2️⃣ Copia de DNI (del docente y del representante).<br>
+        3️⃣ <a href="https://docs.google.com/document/d/19iBlPe4QvzMT1G1_SI5KmNOJ9MjSJxHy/edit?usp=sharing" target="_blank" style="color: #2980b9; font-weight: bold; text-decoration: underline;">📜 Estatuto Docente Municipal</a><br><br>
+        <a href="https://www.google.com/maps/search/?api=1&query=Mendoza+95+Chascomus" target="_blank" class="wa-btn" style="background-color: #004a7c !important;">
+            📍 Ver Ubicación en Mapa
+        </a>
+    </div>`,
+    'cartelera_docente': `
+    <div class="info-card" style="border-left: 5px solid #27ae60;">
+        <strong>📊 Cartelera en Línea (Actos Públicos)</strong><br>
+        <i>Actualización en tiempo real</i><br><br>
+        En esta planilla se publican los <b>cargos/horas a cubrir</b> y los resultados (designaciones o desiertos).<br><br>
+        <a href="https://docs.google.com/spreadsheets/d/15w5mnPVqRsaebkZ-zAmrum8ndqh5MhoWkMDc9j8J7tM/edit?gid=0#gid=0" target="_blank" class="wa-btn" style="background-color: #27ae60 !important; text-align: center; display: block;">
+            ✅ Ver Cartelera y Designaciones</a>
+        <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+        <strong>🏆 Resultados Titularizaciones 2026</strong><br>
+        <small>📅 Publicado: 22/12/2025</small><br><br>
+        Los resultados del Acto de Titularizaciones pueden observarse aquí:<br><br>
+        <a href="https://docs.google.com/spreadsheets/d/1ZzYjG5drCNG50gWmmdheHYfUygtz0XK1hWfLSoAwcyk/edit?gid=0#gid=0" target="_blank" class="wa-btn" style="background-color: #2980b9 !important; text-align: center; display: block;">
+            📄 Ver Planilla Titularizaciones</a>
+        <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+        <strong>📂 Listados Oficiales 2026</strong><br>
+        <small style="color: #e67e22;">🚧 (En proceso de actualización)</small><br><br>
+        👇 <i>Consultá por nivel:</i><br>
+        <ul style="padding-left: 20px; margin-top: 5px;">
+            <li>🎒 <b>Inicial</b></li>
+            <li>✏️ <b>Primaria</b></li>
+            <li>📖 <b>Secundaria</b></li>
+           <li>🤝 <b>Psicología (EOE)</b></li>
+        </ul> <br><a href="https://docs.google.com/spreadsheets/d/15731Nf1EuRPRv8Z8isPW_-_VNawWyiuHMhnFWH70W14/edit?gid=0#gid=0" target="_blank" class="wa-btn" style="background-color: #7f8c8d !important; font-size: 0.85rem;">
+            🔗 Ver carpeta de Listados
+        </a>
+    </div>`,
+    'omic_info': `
+    <div class="info-card">
+        <strong>📢 OMIC (Defensa del Consumidor)</strong><br>
+        Oficina Municipal de Información al Consumidor.<br><br>
+        ⚖️ <b>Asesoramiento y Reclamos:</b><br>
+        Protección de derechos en compras y servicios.<br><br>
+        📍 <b>Dirección:</b> Dorrego 229 (Estación Ferroautomotora).<br>
+        ⏰ <b>Horario:</b> Lunes a Viernes de 8:00 a 13:00 hs.<br>
+        📞 <b>Teléfonos:</b> 43-1287 / 42-5558
+    </div>`,
+    'caps_wa': `
+    <div class="info-card">
+        <strong>📞 WhatsApp de los CAPS:</strong><br><br>
+        🟢 <b>30 de Mayo:</b> <a href="https://wa.me/5492241588248">2241-588248</a><br>
+        🟢 <b>Barrio Jardín:</b> <a href="https://wa.me/5492241498087">2241-498087</a><br>
+        🟢 <b>San Luis:</b> <a href="https://wa.me/5492241604874">2241-604874</a><br>
+        🟢 <b>El Porteño:</b> <a href="https://wa.me/5492241409316">2241-409316</a><br>
+        🟢 <b>Gallo Blanco:</b> <a href="https://wa.me/5492241469267">2241-469267</a><br>
+        🟢 <b>Iporá:</b> <a href="https://wa.me/5492241588247">2241-588247</a><br>
+        🟢 <b>La Noria:</b> <a href="https://wa.me/5492241604872">2241-604872</a><br>
+        🟢 <b>San Cayetano:</b> <a href="https://wa.me/5492241511430">2241-511430</a>
+    </div>`,
+    'caps_mapas': `
+    <div class="info-card">
+        <strong>📍 Ubicaciones CAPS (Toque para ver mapa):</strong><br><br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CIC+30+de+Mayo+Chascomus" target="_blank">CIC 30 de Mayo</a> (Bvd. 5 y Calle 2)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+Barrio+Jardin+Chascomus" target="_blank">Barrio Jardín</a> (Tucumán e/ Quintana)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+San+Luis+Chascomus" target="_blank">San Luis</a> (Chubut 755)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+El+Porteño+Chascomus" target="_blank">El Porteño</a> (Lucio Mansilla)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+Gallo+Blanco+Chascomus" target="_blank">Gallo Blanco</a> (Estados Unidos)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+Ipora+Chascomus" target="_blank">Iporá</a> (Sargento Cabral 387)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+La+Noria+Chascomus" target="_blank">La Noria</a> (Grito de Dolores)<br>
+        • <a href="https://www.google.com/maps/search/?api=1&query=CAPS+San+Cayetano+Chascomus" target="_blank">San Cayetano</a> (Gabino Ezeiza)
+    </div>`,
+    'link_147': `
+    <div class="info-card">
+        <strong>📝 ATENCIÓN AL VECINO 147</strong><br><br>
+        💻 <b>Primera opción:</b>Web Autogestión (24/7):</b><br>
+        Cargá tu ticket y seguí el caso.<br>
+        🔗 <a href="https://147.chascomus.gob.ar" target="_blank">147.chascomus.gob.ar</a><br><br>
+        📧 <b>Correo:</b> <a href="mailto:atencionalvecino@chascomus.gob.ar">atencionalvecino@chascomus.gob.ar</a><br><br>
+           <b>Utilizar como ultima opcion:</b><br>
+        📞 <b>Teléfono (Línea 147):</b><br>
+        Lun a Vie de 8 a 15 horas.<br><br>
+    </div>`,
+
+'poda': `<div class="info-card"><strong>🌿 Ingresa en este link 👇🏼</strong><br>🔗 <a href="https://apps.chascomus.gob.ar/podaresponsable/solicitud.php">🌳 Solicitud Poda</a></div>`,
+
+'obras_basura': `
+<div class="info-card">
+<strong>♻️ Recolección de Residuos:</strong><br><br>
+📅 <b>Días de Recolección:</b><br>
+• Lunes, Miércoles y Viernes: Zona Norte.<br>
+• Martes, Jueves y Sábado: Zona Sur.<br><br>
+⏰ <b>Horario:</b> 7:00 a 15:00 hs.<br><br>
+• <b>Recomendación:</b> Sacar la basura la noche anterior para evitar olores y animales.<br>
+• <b>Contenedores verde oscuro:</b> Para residuos generales.<br>
+• <b>Puntos verdes:</b> Para reciclables (plástico, papel, vidrio).<br><br>
+</div>`,
+
+'farmacias_lista': `
+    <div class="info-card">
+        <strong>📍 Farmacias en Chascomús:</strong><br><br>
+        • <b>Alfonsín:</b> Libres del Sur 121<br>
+        • <b>Aprile:</b> Av. Lastra 115<br>
+        • <b>Batastini:</b> Cramer 70<br>
+        • <b>Belgrano:</b> Belgrano 649<br>
+        • <b>Bellingieri:</b> H. Yrigoyen 78<br>
+        • <b>Cangialosi:</b> Garay 56<br>
+        • <b>Chascomús:</b> Av. Lastra 350<br>
+        • <b>Del Norte:</b> El Ombú 102<br>
+        • <b>Farmasur:</b> Bahía Blanca 91<br>
+        • <b>Malena:</b> Escribano y Machado<br>
+        • <b>Moriset:</b> Av. Lastra 591<br>
+        • <b>Oria:</b> Libres del Sur 413<br>
+        • <b>Pasteur:</b> Libres del Sur 302<br>
+        • <b>Pensa:</b> H. Yrigoyen 710<br>
+        • <b>Pozzi:</b> Rioja 28<br>
+        • <b>Puyssegur:</b> Libres del Sur 946<br><br>
+        💊 <a href="https://www.turnofarma.com/turnos/ar/ba/chascomus" target="_blank" class="wa-btn" style="background:#2ecc71 !important;">VER FARMACIAS DE TURNO</a>
+    </div>`,
+    'zoo_rabia': `
+    <div class="info-card" style="border-left: 5px solid #f1c40f;">
+        <strong style="color:#d35400;">🐾 Quirófano Móvil (Castración)</strong><br><br>
+        📅 <b>Lunes 3 de Febrero</b><br>
+        ⏰ <b>A partir de las 8:30hs</b><br>
+        📍 <b>Barrio Los Sauces</b> (Destacamento policial)<br><br>
+        ✅ <b>GRATIS</b> - Revisación Clínica.<br>
+        🐕 <b>Requisito:</b> Llevar la mascota con collar, correa y/o transportadora.<br><br>
+        🏢 <b>Sede Zoonosis:</b> Mendoza 95.
+    </div>`,
+    'vacunacion_info': `
+    <div class="info-card">
+        <strong>💉 Vacunación</strong><br><br>
+        🏥 <b>Hospital San Vicente de Paul:</b><br>
+        Vacunatorio central. Prioridad: Niños (6m a 2a), gestantes y puérperas.<br><br>
+        🏠 <b>Puntos Barriales:</b><br>
+        CIC "Dr. Quintín" (30 de Mayo) y otros CAPS.<br><br>
+        📋 <b>Info Importante:</b><br>
+        • <b>Demanda espontánea</b> (No requiere orden médica).<br>
+        • <b>Requisitos:</b> Llevar DNI y Libreta de Vacunación.<br><br>
+        📱 <i>Consultá las redes de "Secretaría de Salud Chascomús" para horarios actualizados.</i>
+    </div>`,
+    'info_habitat': `
+    <div class="info-card">
+        <strong>🔑 Info de Hábitat</strong><br>
+        • Registro de Demanda (Mayores de 18).<br>
+        • Bien de Familia (Protección jurídica).<br>
+        • Gestión de Tierras y Catastro.<br><br>
+        👇 <b>Seleccioná una opción:</b>
+    </div>`,
+    'habitat_info': `
+    <div class="info-card">
+        <strong>📍 Dirección y contacto</strong><br>
+        <i>Dirección de Hábitat y Tierras</i><br><br>
+        <a href="https://wa.me/5492241559412" target="_blank" class="wa-btn" style="background-color: #25D366 !important; margin-bottom: 8px;">
+            💬 Consultas WhatsApp
+        </a>
+        <a href="https://www.google.com/maps/search/?api=1&query=Dorrego+y+Bolivar+Chascomus" target="_blank" class="wa-btn" style="background-color: #e67e22 !important; margin-bottom: 8px;">
+            📍 Dorrego y Bolivar (Ex IOMA)
+        </a>
+       </div>`,
+    'habitat_planes': `
+    <div class="info-card">
+        <strong>🏘️ Planes Habitacionales</strong><br>
+        <i>Programas de vivienda social y acceso a la tierra</i><br><br>
+        📋 <b>Trámites Disponibles:</b><br>
+        1. Registro de Demanda Habitacional.<br>
+        2. Solicitud de Bien de Familia.<br>
+        3. Consultas sobre Planes de Vivienda.<br><br>
+        <a href="https://apps.chascomus.gob.ar/vivienda/" target="_blank" class="wa-btn" style="background-color: #004a7c !important;">
+        🔗 Planes Habitacionales
+        </a>
+    </div>`,
+     'ojos_en_alerta': `
+    <div class="info-card">
+        <strong>👀 OJOS (En alerta)</strong><br>
+        Programa de seguridad ciudadana.<br><br>
+        ⚖️ <b>Denuncias, Robo, Accidentes, Actitudes sospechosas, etc.:</b><br>
+        Protección de derechos del ciudadano.<br><br>
+        📍 <b>Dirección:</b> Arenales y Julian quintana.<br>
+        ⏰ <b>Horario:</b> Lunes a Lunes 24hs.<br>
+        <a href="https://wa.me/5492241557444" target="_blank" class="wa-btn" style="background-color: #efe8e3ff !important;">
+        📲 Por cualquier info (WhatsApp)
+        </a>
+    </div>`,
+    'pamuv': `<div class="info-card" style="border-left: 5px solid #c0392b;"><strong style="color: #c0392b;">🆘 PAMUV (Asistencia a la Víctima)</strong><br><br>Atención, contención y asesoramiento a personas víctimas de delitos o situaciones de violencia.<br><br>🛡️ <b>Plan Integral de Seguridad 2025-2027</b><br><br>🚨 <b>ATENCIÓN 24 HORAS:</b><br>Línea permanente para emergencias o consultas.<br><a href="https://wa.me/5492241514881" class="wa-btn" style="background-color: #c0392b !important;">📞 2241-514881 (WhatsApp)</a></div>`,
+    'defensa_civil': `<div class="info-card" style="border-left: 5px solid #c0392b;">
+    <strong style="color: #c0392b;">🌪️ Defensa Civil</strong><br><br>
+    🚨 <b>LÍNEA DE EMERGENCIA:</b><br>
+    Atención ante temporales, caída de árboles y riesgo en vía pública.<br>
+    📞 <a href="tel:103" class="wa-btn" style="background-color: #c0392b !important; text-align:center; display:block;">LLAMAR AL 103</a><br>
+    📧 <a href="mailto:defensa.civil@chascomus.gob.ar">Enviar Correo Electrónico</a></div>`,
+    'Basapp_info': `
+    <div class="info-card">
+        <strong>🎥 Guía de Basapp</strong><br><br>
+        <video width="100%" height="auto" controls style="border-radius: 8px; border: 1px solid #ddd;">
+            <source src="videos/Basapp.mp4" type="video/mp4">
+            Tu navegador no soporta el video.
+        </video>
+        <br><br>
+        <p style="font-size: 0.85rem; color: #555;">
+            Mirá este breve tutorial sobre cómo usar la app Basapp.
+        </p>
+    </div>`,
+    'apps_seguridad': `
+    <div class="info-card">
+        <strong>📲 Aplicaciones de Seguridad y Tránsito</strong><br><br>
+        🔔 <b>BASAPP (Alerta Vecinal):</b><br>
+        Botón antipánico y reportes.<br>
+        🤖 <a href="https://play.google.com/store/apps/details?id=ar.com.basapp.android.client" target="_blank" rel="noopener noreferrer">Descargar Android</a><br>
+        🍎 <a href="https://apps.apple.com/ar/app/basapp/id1453051463" target="_blank" rel="noopener noreferrer">Descargar iPhone</a><br><br>
+        
+        🅿️ <b>SEM (Estacionamiento Medido):</b><br>
+        Gestioná tu estacionamiento.<br>
+        🤖 <a href="https://play.google.com/store/apps/details?id=ar.edu.unlp.semmobile.chascomus" target="_blank" rel="noopener noreferrer">Descargar Android</a><br>
+        🍎 <a href="https://apps.apple.com/ar/app/sem-mobile/id1387705895" target="_blank" rel="noopener noreferrer">Descargar iPhone</a></div>`,
+   
+        'alcohol_info': `
+    <div class="info-card">
+        <strong>🎥 Guía de alcohol al volante</strong><br><br>
+        <video width="100%" height="auto" controls style="border-radius: 8px; border: 1px solid #ddd;">
+            <source src="videos/Alcohol_al_volante.mp4" type="video/mp4">
+            Tu navegador no soporta el video.
+        </video>
+        <br><br>
+        <p style="font-size: 0.85rem; color: #555;">
+            Mirá este breve tutorial sobre alcohol al volante.
+        </p>
+    </div>`,
+
+    'document_info': `
+    <div class="info-card">
+        <strong>🎥 Guía de Documentación de Tránsito</strong><br><br>
+         <video width="100%" height="auto" controls style="border-radius: 8px; border: 1px solid #ddd;">
+            <source src="videos/documentacion.mp4" type="video/mp4">
+            Tu navegador no soporta el video.
+        </video>
+        <br><br>
+        <p style="font-size: 0.85rem; color: #555;">
+            Mirá este breve tutorial sobre documentación de tránsito.
+        </p>
+    </div>`,
+
+    'seg_infracciones': 
+    `<div class="info-card">
+    <strong>⚖️ Infracciones:</strong><br>
+    🔗 <a href="https://chascomus.gob.ar/municipio/estaticas/consultaInfracciones" style="background-color:#25D366" target="_blank">VER MIS MULTAS</a></div>`,
+    'seg_academia': `<div class="info-card"><strong>🚗 Academia de Conductores</strong><br>Turnos para cursos y exámenes teóricos.<br>🔗 <a href="https://apps.chascomus.gob.ar/academia/" target="_blank">INGRESAR A LA WEB</a></div>`,
+    'seg_medido': `<div class="info-card"><strong>🅿️ Estacionamiento Medido</strong><br>Gestioná tu estacionamiento desde el celular.<br><br>📲 <b>Descargar App:</b><br>🤖 <a href="https://play.google.com/store/apps/details?id=ar.edu.unlp.sem.mobile.chascomus" target="_blank">Android (Google Play)</a><br>🍎 <a href="https://apps.apple.com/ar/app/sem-mobile/id1387705895" target="_blank">iPhone (App Store)</a><br><br>💻 <a href="https://chascomus.gob.ar/estacionamientomedido/" target="_blank">Gestión vía Web</a></div>`,
+    'lic_turno': `<b>📅 Turno Licencia:</b><br>🔗 <a href="https://apps.chascomus.gob.ar/conducir/" target="_blank">SOLICITAR TURNO</a>`, 
+    'poli': `
+    <div class="info-card">
+        <strong>🎥 (MONITOREO)</strong><br><br>
+        Secretaría de Seguridad Ciudadana y el Centro de Monitoreo.<br><br>
+        ☎️ <b>Para comunicarte:</b><br>
+        <a href="tel:43-1333" class="wa-btn" style="background-color:#25D366 !important; text-align:center;">📞 43-1333</a><br>
+        <small><i>⚠️ Solo emergencias.</i></small><br><br>
+         🚔 <b>POLICIA:</b><br>
+        Solicitalo a <a href="tel:422222" class="wa-btn" style="background-color:#25D366 !important; text-align:center;">📞 42-2222</a><br><br></div>`,
+    'turismo_info': `<div class="info-card"><strong>🏖️ Subsecretaría de Turismo</strong><br>📍 Av. Costanera España 25<br>📞 <a href="tel:02241615542">02241 61-5542</a><br>📧 <a href="mailto:turismo@chascomus.gob.ar">Enviar Email</a><br>🔗 <a href="https://linktr.ee/turismoch" target="_blank">Más info en Linktree</a></div>`,
+    'deportes_info': `<div class="info-card"><strong>⚽ Dirección de Deportes</strong><br>
+    📍 Av. Costanera España y Av. Lastra<br>📞 <a href="tel:02241424649">(02241) 42-4649</a></div>`,
+    
+    'deportes_circuito': `
+    <div class="info-card"><strong>🏃 Circuito de Calle</strong><br>Inscripciones y resultados oficiales.
+    <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/circuitodecalle/" target="_blank" class="wa-btn">INSCRIPCIONES CIRCUITO DE CALLE</a><br>
+    </div>`,
+    
+    'deportes_trail': `
+    <div class="info-card"><strong>🚴 Trail Bike</strong><br>Inscripciones y resultados oficiales.
+    <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/trail/inscripcion.php" target="_blank" class="wa-btn">INSCRIPCIONES TRAIL BIKE</a><br>
+    </div>`,
+    
+'info_deportes_aguas': `
+     <div class="info-card"><strong>🏊 Aguas Abiertas</strong><br>Inscripciones y resultados oficiales
+     <br>🔗 <a href="https://apps.chascomus.gob.ar/deportes/aguasabiertas/inscripcion.php" target="_blank" class="wa-btn">INSCRIPCIONES AGUAS ABIERTAS</a><br>
+    <br>🔗 <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTdlmaYq_wSB0aZj-GNNOWRtzBK8OwZ86_eu2McGhPfcfwrelp8I1IMWWT7v9bv3QBh86sdGPVOWDKy/pubhtml" target="_blank" class="wa-btn">RESULTADOS OFICIALES</a><br>
+     </div>`,
+    'politicas_gen': `<div class="info-card" style="border-left: 5px solid #9b59b6;"><strong style="color: #8e44ad; font-size: 1rem;">
+    💜 Género y Diversidad</strong><br><br><div style="font-size: 0.85rem; margin-bottom: 12px;">
+    🚨 <b>Guardia 24/7:</b> Orientación y acompañamiento en casos de violencia.<br>
+    🧠 <b>Equipo Técnico:</b> Abogadas, psicólogas y trabajadoras sociales.<br>
+    🏠 <b>Hogar de Tránsito:</b> Alojamiento temporal para mujeres en riesgo.<br>
+    🗣️ <b>Varones:</b> Espacio de abordaje y deconstrucción de conductas violentas.<br>
+    👮‍♀️ <b>Articulación:</b> Trabajo conjunto con Comisaría de la Mujer.</div><div style="background: #fdf2ff; padding: 10px; border-radius: 8px; font-size: 0.9rem;">
+    📍 <b>Oficina:</b> Moreno 259 (Lun-Vie 9-14hs)<br>
+    ☎️ <b>Fijo Oficina:</b> <a href="tel:02241530448">2241-530448</a><br>
+    🚓 <b>Comisaría Mujer:</b> <a href="tel:02241422653">42-2653</a></div><a href="https://wa.me/5492241559397" target="_blank" class="wa-btn" style="background-color: #8e44ad !important;">
+    🚨 GUARDIA 24HS (WhatsApp)</a></div>`,
+    'asistencia_social': `
+    <div class="info-card" style="border-left: 5px solid #e67e22;">
+        <strong style="color: #d35400; font-size: 1rem;">🍎 Módulos Alimentarios (CAM)</strong><br><br>
+        
+        <div style="font-size: 0.85rem; margin-bottom: 12px;">
+            📦 <b>RETIRO DE MERCADERÍA:</b><br>
+            Entrega mensual de módulos de alimentos secos para familias empadronadas.<br><br>
+            📋 <b>Requisitos al retirar:</b><br>
+            • Presentar DNI del titular (Obligatorio).<br>
+            • Certificado médico (si corresponde a dieta celíaca).
+        </div>
+
+        <div style="background: #edb482ff; padding: 10px; border-radius: 8px; font-size: 0.9rem; border: 1px solid #ffe0b2;">
+            📍 <b>Lugar de Retiro:</b><br>
+            Depósito de calle Juárez (casi esquina Mazzini).<br><br>
+            ⏰ <b>Horario:</b><br>
+            Lunes a Viernes de 8:00 a 14:00 hs.<br><br>
+            🏢 <b>Trámites y Empadronamiento:</b><br>
+            Secretaría de Desarrollo (Moreno 259).
+        </div>
+
+        <br>
+        <a href="https://wa.me/5492241530478" target="_blank" class="wa-btn" style="background-color: #d35400 !important;">
+            📲 Consultar Cronograma (WhatsApp)
+        </a>
+    </div>`,
+    'ninez': `<div class="info-card"><strong>👶 Niñez:</strong> Mendoza Nº 95. 📞 43-1146.</div>`,
+    'mediacion_info': `<div class="info-card"><strong>⚖️ Mediación Comunitaria</strong><br>Resolución pacífica y gratuita de conflictos vecinales (ruidos, mascotas, edilicios).<br>📍 <b>Acercate a:</b> Moreno 259.</div>`,
+    'uda_info': `<div class="info-card"><strong>📍 Puntos UDA (Atención en Barrios)</strong><br><i>Acercate a tu punto más cercano:</i><br><br>🔹 <b>UDA 1 (San Luis):</b> Chubut 755 (Mar/Vie 9-12).<br>🔹 <b>UDA 2 (San José Obrero):</b> F. Chapa 625 (Mar/Vie 9-12).<br>🔹 <b>UDA 3 (El Porteño):</b> Mansilla y Calle 3 (Vie 9-12).<br>🔹 <b>UDA 4 (30 de Mayo):</b> Bvd. 5 y Calle 2 (Vie 9-12).<br>🔹 <b>UDA 5 (B. Jardín):</b> J. Quintana e/ Misiones (Mar/Mié 9-12).<br>🔹 <b>UDA 6 (Gallo Blanco):</b> EE.UU. y Las Flores (Lun 9-12).<br>🔹 <b>UDA 7 (San Cayetano):</b> Comedor (Mar 9-12).<br>🔹 <b>UDA 8 (Políticas Com.):</b> Sarmiento 42 (Lun-Vie 8-12).<br>🔹 <b>UDA 9 (Iporá):</b> Perú y S. Cabral (Jue 9-12).<br><br>🚨 <b>Guardia 24hs:</b> <a href="https://wa.me/5492241559397">2241-559397</a></div>`,
+    'hac_tomasa': `<div class="info-card"><strong>🌾 TOMASA:</b><br>ℹ️ Portal de autogestión.<br>🔗 <a href="https://tomasa.chascomus.gob.ar/"target="_blank" class="wa-btn">INGRESAR</a></div>`,
+    'deuda_video_info': `
+    <div class="info-card">
+        <strong>🎥 La muni Invierte</strong><br><br>
+        <video width="100%" height="auto" controls style="border-radius: 8px; border: 1px solid #ddd;">
+            <source src="videos/la_muni_invierte.mp4" type="video/mp4"> Tu navegador no soporta el video.
+        </video>
+        <br><br>
+        <p style="font-size: 0.85rem; color: #555;">
+            Mirá este breve tutorial sobre cómo iniciar tu trámite de habilitación comercial 100% online.
+        </p>
+    </div>`,
+    'boleta': `<div class="info-card"><strong>📧 BOLETA DIGITAL</strong><br>🟢 <i>Para inscribirse comunicarse por estas vias<br> 
+    📲: <a href="https://wa.me/5492241557616">2241-557616</a><br>📧 <a href="mailto:ingresospublicos@chascomus.gob.ar">Email</a></div>`,
+    'agua': `<div class="info-card"><strong>💧 CONSUMO DE AGUA</strong><br> ℹ️ Para conocer y pagar su consumo ingrese a este Link<br>
+    🔗 <a href="https://apps.chascomus.gob.ar/caudalimetros/consulta.php" target="_blank" class="wa-btn">VER MI CONSUMO</a></div>`, 
+    'consulta_tributaria': `
+    <div class="info-card">
+        <strong>💸 CONSULTA TRIBUTARIA</strong><br><br>
+        Ingresos Públicos.<br><br>
+        ☎️ <b>Para comunicarte</b><br>
+        📲 <a href="https://wa.me/5492241557616">2241-557616</a><br>
+        📧 <a href="mailto:ingresospublicos@chascomus.gob.ar">ingresospublicos@chascomus.gob.ar</a><br><br>
+        Seleccione tipo de cuenta 🏠<b>INMUEBLE</b> para deudas de Servicios Sanitarios y Alumbrado Público Empresas (ALPEM).<br>
+        Seleccione tipo de cuenta 🏢<b>COMERCIO</b> para deudas de Seguridad e Higiene.<br>
+        Seleccione tipo de cuenta 🚗<b>VEHÍCULOS</b> para deudas relacionadas con Impuesto Automotor o Patentes de Rodados Menores.<br>
+        Seleccione tipo de cuenta 👤<b>CONTRIBUYENTE</b> para deudas de Marcas y señales (Guías) y 16 Viviendas.<br>
+        Seleccione <b>PERÍODOS ADEUDADOS</b> para listar los períodos impagos de tasas.<br>
+        Seleccione <b>CUOTAS DE CONVENIO</b> para listar las cuotas de convenio de pago vigentes.<br><br>
+        🔗 <a href="https://deuda.chascomus.gob.ar/consulta.php" target="_blank" class="wa-btn">CONSULTAR AQUÍ</a>
+    </div>`,
+    'deuda': `<div class="info-card"><strong>🔍 CONSULTA DEUDA</strong><br>💸 Para ver sus impuestos.<br>
+    🏠<b>INMOBILIARIO</b><br>
+    👤<b>CONTRIBUYENTE</b><br>
+    ⚰️<b>CEMENTERIO</b><br>
+    🔗 <a href="https://pagos.chascomus.gob.ar/#destino=imponible" target="_blank" class="wa-btn">CONSULTAR AQUÍ</a></div>`,
+    'hab_gral': `
+    <div class="info-card">
+        <strong>🏢 Habilitación Comercial / Industrial</strong><br><br>
+        <i>Para comercios, industrias y servicios.</i><br><br>
+        📋 <b>Requisitos Principales:</b><br>
+        • DNI (Mayor de 21 años).<br>
+        • Constancia CUIT e IIBB.<br>
+        • Título Propiedad/Alquiler (Firmas certificadas).<br>
+        • Libre deuda Tasas Municipales.<br>
+        • Certificado Urbanístico.<br><br>
+        📍 <b>Presencial:</b> Maipú 415 (Producción).<br><br>
+        🚀 <a href="https://apps.chascomus.gob.ar/habilitaciones/habilitacionComercial.php" target="_blank" class="wa-btn">INICIAR TRÁMITE ONLINE</a>
+    </div>`,
+    'hab_eventos': `
+    <div class="info-card">
+        <strong>🎉 Eventos y Salones de Fiesta</strong><br>
+        <i>Regulado por Ord. 5660, 5672 y 5923.</i><br><br>
+        ⚠️ <b>Plazos:</b><br>
+        Solicitar con <b>10 días hábiles</b> de anticipación.<br><br>
+        🚒 <b>Requisito Bomberos:</b><br>
+        Se exige certificado final de obra (Bomberos Dolores).<br>
+        📧 tecnica_dolores@hotmail.com<br>
+        📞 (02245) 44-6107<br><br>
+        📝 <a href="https://apps.chascomus.gob.ar/habilitaciones/habilitacionEventoPrivado2.0.php" target="_blank" class="wa-btn">IR AL FORMULARIO</a>
+    </div>`,
+    'hab_espacio': `
+    <div class="info-card">
+        <strong>🍔 Uso de Espacio Público</strong><br>
+        <i>Patios gastronómicos y Foodtrucks.</i><br><br>
+        📋 <b>Requisitos:</b><br>
+        • DNI y CUIT del titular.<br>
+        • Curso manipulación de alimentos (todo el personal).<br>
+        • Título del vehículo/carro.<br>
+        • Seguros (Vehículo + Responsabilidad Civil).<br>
+        • Domicilio en Chascomús.<br><br>
+        📝 <a href="https://apps.chascomus.gob.ar/habilitaciones/habilitacionCarro.php" target="_blank" class="wa-btn">INICIAR TRÁMITE ONLINE</a>
+    </div>`,
+  'hab_reba': `
+    <div class="info-card">
+        <strong>🍷 Registro de Alcohol (REBA)</strong><br><br>
+        Obligatorio para comercializar bebidas alcohólicas.<br><br>
+        📲 <b>WhatsApp HABILITACIONES:</b><br>
+        <a href="https://wa.me/5492241559389" class="wa-btn" style="background-color:#25D366 !important; text-align:center;">💬 2241-559389</a><br>
+        <small><i>⚠️ Solo mensajes escritos o audios. No llamadas.</i></small><br><br>
+        📧 <b>Por Email:</b><br>
+        Solicitalo a <a href="mailto:habilitaciones@chascomus.gob.ar">habilitaciones@chascomus.gob.ar</a><br><br>
+        🏦 <b>Pago:</b> Recibirás una boleta para abonar en Banco Provincia.
+    </div>`,
+    'h_turnos': `
+    <div class="info-card">
+        <strong>📍 <b>Hospital Municipal:</b> Av. Alfonsín e Yrigoyen.<br>🚨 Guardia 24 hs.</strong><br>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn" style="background-color: #14df10ff !important;">
+            📲 Consultar por turnos (WhatsApp)
+        </a>
+    </div>`, 
+    'info_pediatria': `
+    <div class="info-card">
+        <strong>👶 Pediatría</strong><br>
+        <i>Atención en Consultorios Externos</i><br><br>
+        📅 <b>Días:</b> Lunes, Martes y Jueves.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_clinica': `
+    <div class="info-card">
+        <strong>🩺 Clínica Médica</strong><br><br>
+        📅 <b>Días:</b> Lunes, Miércoles y Viernes.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_gineco': `
+    <div class="info-card">
+        <strong>🤰 Salud de la Mujer</strong><br><br>
+        🔹 <b>Ginecología:</b> Lunes.<br>
+        🔹 <b>Obstetricia:</b> Miércoles.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_cardio': `
+    <div class="info-card">
+        <strong>❤️ Cardiología</strong><br><br>
+        📅 <b>Días:</b> Martes.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_trauma': `
+    <div class="info-card">
+        <strong>🦴 Traumatología</strong><br><br>
+        📅 <b>Días:</b> Martes.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_oftalmo': `
+    <div class="info-card">
+        <strong>👁️ Oftalmología</strong><br><br>
+        📅 <b>Días:</b> Miércoles.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_nutri': `
+    <div class="info-card">
+        <strong>🍎 Nutrición</strong><br><br>
+        📅 <b>Días:</b> Jueves.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_cirugia': `
+    <div class="info-card">
+        <strong>🔪 Cirugía General</strong><br><br>
+        📅 <b>Días:</b> Jueves.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'info_neuro_psiq': `
+    <div class="info-card">
+        <strong>🧠 Salud Mental y Neurología</strong><br><br>
+        🔹 <b>Neurología:</b> Viernes.<br>
+        🔹 <b>Psiquiatría:</b> Viernes.<br><br>
+        👇 <i>Sacá turno por WhatsApp:</i>
+        <a href="https://wa.me/5492241466977" target="_blank" class="wa-btn">📅 SOLICITAR TURNO</a>
+    </div>`,
+    'res_compre_chascomus': `
+    <div class="info-card">
+        <strong>🤝 Compre Chascomús - Producción Local</strong><br><br>
+        Vinculamos a la economía social con comerciantes locales (Micro, Pequeños y Grandes) con habilitación.<br><br>
+        📋 <b>Requisitos para inscripción:</b><br>
+        Tener foto de: AFIP, ARBA, Habilitación Municipal y DNI.<br><br>
+        👇 <i>Completá el formulario y la Dirección de Producción te contactará:</i><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSfa4LPccR6dYwkQFWhG31HELnaKMCSgUF7Jqy1xfiSNR_fA_g/viewform" target="_blank" class="wa-btn">📝 FORMULARIO DE INSCRIPCIÓN</a>
+    </div>`,
+    'res_prod_frescos': `
+    <div class="info-card">
+        <strong>🥦 Orientación Productores Alimentos Frescos</strong><br><br>
+        Para productores de alimentos agroecológicos, agricultura familiar, cooperativas y PyMEs de Chascomús.<br><br>
+        <i>Acompañamos el desarrollo de tu unidad económica.</i><br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeMzImHt14uXF4ZSk3wiJEqfxK4U2Tw9bSJrJXaKGLv5kLGew/closedform" target="_blank" class="wa-btn">📝 FORMULARIO PRODUCTORES</a>
+    </div>`,
+    'res_oe_inscripcion': `
+    <div class="info-card">
+        <strong>📝 Inscripción / Actualización Laboral</strong><br><br>
+        Para mayores de 18 años residentes en Chascomús en búsqueda activa.<br><br>
+        1. Completá el formulario con tus datos y perfil.<br>
+        2. Te contactaremos (Lun a Vie 8 a 14hs) para una entrevista y asesoramiento.<br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSfl7uzaIU0u8G-S3uTjtddZl7y4o5jajZUzNuftZEyfqPdDKg/viewform" target="_blank" class="wa-btn">📝 CARGAR MI CV / DATOS</a>
+    </div>`,
+    'res_oe_promover': `
+    <div class="info-card">
+        <strong>♿ Programa Nacional Promover</strong><br><br>
+        Para mayores de 18 años desempleados que posean <b>Certificado Único de Discapacidad (CUD)</b>.<br><br>
+        Ofrece formación, capacitación y acompañamiento en el perfil laboral.<br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGoPi4Xmg0zD2VtBzTr1sFol1QtLAM5G0oDA6vExM_cvIYbQ/viewform" target="_blank" class="wa-btn">📝 INSCRIPCIÓN PROMOVER</a>
+    </div>`,
+    'res_oe_taller_cv': `
+    <div class="info-card">
+        <strong>📄 Armado de CV y Búsqueda de Empleo</strong><br><br>
+        ¿No sabés por dónde empezar a buscar trabajo? ¿Querés mejorar tu Currículum?<br><br>
+        Te ofrecemos información y strategies para tener la mejor herramienta de presentación.<br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdQkEPZZx7gXZXO9vAb7u3Klxj8g5cwSe1fXqz6Zmo4jjMNBg/viewform" target="_blank" class="wa-btn">📝 INSCRIBIRSE AL TALLER</a>
+    </div>`,
+    'res_emp_chasco': `
+    <div class="info-card">
+        <strong>🚀 Programa Chascomús Emprende</strong><br><br>
+        Objetivo: Fortalecer y acompañar unidades productivas.<br><br>
+        Al completar el formulario, ingresás al listado para coordinar una entrevista de diagnóstico y orientación.<br><br>
+        <a href="https://uploads.chascomus.gob.ar/produccion/PROGRAMA%20CHASCOMUS%20EMPRENDE.pdf" target="_blank" class="wa-btn">📝 INSCRIPCIÓN EMPRENDEDORES</a>
+    </div>`,
+    'res_empl_busqueda': `
+    <div class="info-card">
+        <strong>🔎 Búsqueda de Personal</strong><br><br>
+        Si sos empleador, completá el formulario describiendo el puesto.<br><br>
+        ✅ La Dirección de Producción realizará una preselección y te presentará una <b>terna final de candidatos</b>.<br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdOeVRsshYtc8JF-sTXyEqQgJl2hyTbxyfDPb0G7SsiGBMj_g/viewform" target="_blank" class="wa-btn">📝 PUBLICAR PUESTO</a>
+    </div>`,
+    'res_empl_madrinas': `
+    <div class="info-card">
+        <strong>🤝 Programa Formando Red - Empresas Madrinas</strong><br><br>
+        Vinculamos empresas con compromiso social que deseen capacitar a futuros trabajadores, favoreciendo la igualdad de oportunidades.<br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSe7SA_eKKQw-EDuFU9pDBIE_nUjzLOX6AZrHI_KfO3bwufVSA/viewform" target="_blank" class="wa-btn">📝 QUIERO SER EMPRESA MADRINA</a>
+    </div>`,
+    'res_manipulacion': `
+    <div class="info-card">
+        <strong>🔴 Carnet de Manipulación de Alimentos</strong><br><br>
+        Obligatorio (Código Alimentario Argentino) para quien elabore, transporte o comercialice alimentos.<br><br>
+        ✅ <b>Validez:</b> 3 años (Nacional).<br>
+        🎓 <b>Requisito:</b> Aprobar el Curso de Manipulación Segura.<br><br>
+        <i>Modalidad presencial (y próximamente virtual).</i><br><br>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSctX7eGQxBNei5howcIjXhIzlBTKQQb_RIBImnKXjVPvIVrvw/closedform" target="_blank" class="wa-btn">📝 INSCRIPCIÓN AL CURSO</a>
+    </div>`,
+     'prod_contacto': `
+    <div class="info-card">
+        <strong>📍 Dirección de Producción</strong><br><br>
+        📍 <b>Dirección:</b> Maipú 415, Chascomús.<br>
+        📞 <b>Teléfonos:</b> <a href="tel:02241436365">43-6365</a> / <a href="tel:02241430841">43-0841</a><br>
+        📧 <a href="mailto:produccion@chascomus.gob.ar">produccion@chascomus.gob.ar</a><br><br>
+        ℹ️ <b>Atención:</b><br>
+        Orientación a productores de alimentos frescos, PYMES y cooperativas, impulsando la economía social y la agricultura familiar.
+    </div>`,
+        'contacto_gral': `<div class="info-card">
+    <strong>🏛️ Contacto Municipalidad</strong><br>
+    <i>Canales de atención directa:</i><br><br>
+    📞 <b>Teléfono Fijo (Conmutador):</b><br>
+    Atención de 7:30 a 13:30 hs.<br>
+    <a href="tel:02241431341" class="wa-btn" style="background-color: #004a7c !important; text-align:center;">📞 LLAMAR AL 43-1341</a><br>
+    
+    📲 <b>WhatsApp Operador:</b><br>
+    Consultas y reclamos.<br>
+    <a href="https://wa.me/5492241000000" class="wa-btn" style="text-align:center;">💬 CHATEAR AHORA</a><br>
+    
+    📍 <b>Mesa de Entradas:</b><br>
+    Cr. Cramer 270.</div>`
+};
+
+/* --- CONEXIÓN CON GOOGLE SHEETS (LOGS) --- */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4OwdnxlW5ux5CDKvrsoFjy9yDiTT1o1KQ0QOtghtBFjPX1dTTcpL20hV2dsPjJU0p/exec';
 
 function registrarEnPlanilla(detalle) {
     if (!SCRIPT_URL || SCRIPT_URL.includes('TU_ID_DEL_SCRIPT_AQUI')) return;
@@ -312,303 +972,504 @@ function registrarEnPlanilla(detalle) {
     const payload = {
         fecha: new Date().toLocaleString('es-AR'), 
         usuario: userName || "Anónimo",
+        barrio: userNeighborhood || "No especificado",
+        edad: userAge || "No especificada",
         detalle: detalle 
     };
 
     fetch(SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: 'no-cors', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-    }).then(() => {
-        console.log("Registro guardado en Sheets:", detalle);
     }).catch(error => {
-        console.error("Error al guardar en Sheets:", error);
+        console.error("❌ Error de red al intentar guardar en Sheets:", error);
     });
 }
 
-// --- FUNCIONES LÓGICAS ---
-function normalizar(str) {
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-}
+/* --- 3. LÓGICA DEL CHAT Y FUNCIONES ÚTILES --- */
+function normalizar(str) { return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); } 
 
-function clearSession() {
-    if (confirm("¿Cerrar sesión y borrar datos?")) {
-        localStorage.clear();
-        location.reload();
-    }
-}
-
-function resetToMain() {
-    currentPath = ['main'];
-    showMenu('main');
-}
-
-// --- REGISTRO ÚNICO (Solo nombre) ---
-function registrarDato(valor) {
-    if (!userName) {
-        userName = valor;
-        localStorage.setItem('rrhh_user_name', userName);
-        registrarEnPlanilla('Nuevo usuario registrado: ' + userName); 
-        showMenu('main');
-    }
-}
-
-function ejecutarBusqueda(texto) {
+function validarTexto(texto) {
     const t = normalizar(texto);
-    let encontrado = null;
-    for (let key in PALABRAS_CLAVE) {
-        if (t.includes(key)) { encontrado = PALABRAS_CLAVE[key]; break; }
+    for (let i = 0; i < PALABRAS_OFENSIVAS.length; i++) {
+        const regexOfensiva = new RegExp(`\\b${PALABRAS_OFENSIVAS[i]}\\b`, 'i');
+        if (regexOfensiva.test(t)) {
+            return { v: false, m: "Por favor, mantengamos el respeto en el chat. 😇" };
+        }
     }
-    if (encontrado) {
+    return { v: true, m: "" };
+}
+
+function showTyping() {
+    isBotThinking = true;
+
+    const container = document.getElementById('chatMessages');
+    const wrapper = document.createElement('div'); 
+    wrapper.className = 'message-wrapper'; 
+    wrapper.id = 'typingWrapper';
+    
+    wrapper.innerHTML = `
+        <img src="${IMG_BOT_NORMAL}" class="avatar-chat" alt="Bot Pensando">
+        <div class="message bot"><span class="typing-dots">Escribiendo</span></div>
+    `;
+    
+    container.appendChild(wrapper); 
+    container.scrollTop = container.scrollHeight; 
+}
+
+function addMessage(content, side = 'bot', options = null) {
+    if(side === 'bot') { 
+        isBotThinking = false; 
+        const t = document.getElementById('typingWrapper'); 
+        if(t) t.remove(); 
+    } 
+
+    const container = document.getElementById('chatMessages');
+    const wrapper = document.createElement('div'); wrapper.className = `message-wrapper ${side}`;
+    
+    let html = (side === 'bot') ? `<img src="${IMG_BOT_NORMAL}" class="avatar-chat" alt="Bot">` : ''; 
+    html += `<div class="message ${side}">${content}</div>`;
+    wrapper.innerHTML = html; container.appendChild(wrapper);
+
+    if (side === 'bot') { 
+        hablar(content); 
+    }
+
+    if (options) {
+        const optDiv = document.createElement('div'); optDiv.className = 'options-container'; 
+        options.forEach(o => {
+            const btn = document.createElement('button'); btn.className = `option-button ${o.id==='back'?'back':''}`;
+            btn.innerText = o.label; btn.onclick = () => handleAction(o);
+            optDiv.appendChild(btn);
+        });
+        container.appendChild(optDiv);
+    }
+    container.scrollTop = container.scrollHeight;
+}
+
+function showNavControls() {
+    const container = document.getElementById('chatMessages');
+    const navDiv = document.createElement('div'); navDiv.className = 'options-container'; 
+    navDiv.innerHTML = `<button class="option-button back" onclick="interaccionIniciada=true; showMenu(currentPath[currentPath.length-1])">⬅️ Volver</button><button class="option-button" onclick="interaccionIniciada=true; resetToMain()">🏠 Inicio</button>`;
+    container.appendChild(navDiv); container.scrollTop = container.scrollHeight;
+}
+
+function handleAction(opt) {
+    interaccionIniciada = true;
+
+    if(opt.id === 'back') { 
+        if(currentPath.length > 1) currentPath.pop(); 
+        showMenu(currentPath[currentPath.length-1]); 
+        return; 
+    } 
+    
+    if(opt.type === 'age_select') { 
+        userAge = opt.label; 
+        localStorage.setItem('chas_user_age', userAge); 
+        resetToMain(); 
+        return; 
+    } 
+    
+    if(opt.type === 'barrio_select') { 
+        selectBarrio(opt.label); 
+        return; 
+    }
+
+    // --- FLUJO NORMAL DE BOTONES ---
+    addMessage(opt.label, 'user');
+    
+    if(opt.apiKey) {
+        showTyping(); 
+        setTimeout(() => { addMessage(RES[opt.apiKey]); showNavControls(); }, 800); 
+        registrarEnPlanilla(opt.label); 
+    } else if(opt.link) { 
         showTyping();
-        setTimeout(() => handleAction(encontrado), 500);
+        setTimeout(() => { 
+            addMessage(`Te dejo el acceso directo acá: <br><br><a href="${opt.link}" target="_blank" class="wa-btn">${opt.label}</a>`, 'bot'); 
+            showNavControls(); 
+            registrarEnPlanilla(opt.label); 
+        }, 800);
+    } else if(MENUS[opt.id]) {
+        currentPath.push(opt.id); showMenu(opt.id); 
+    }
+}
+
+function showMenu(key) {
+    const m = MENUS[key];
+    
+    if (m.type === 'card') {
+        const cardHtml = `
+            <div class="info-card card-visual">
+                <img src="${m.image}" style="width:100%; border-radius:10px; margin-bottom:10px;">
+                <strong>${typeof m.title === 'function' ? m.title() : m.title}</strong><br>
+                <small style="color:var(--text-muted)">${m.subtitle}</small><br><br>
+                <p>${m.description}</p>
+                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                <small><i>${m.footer}</i></small>
+            </div>
+        `;
+        let opts = [...(m.options || [])]; 
+        if(currentPath.length > 1) opts.push({ id: 'back', label: '⬅️ Volver' }); 
+        addMessage(cardHtml, 'bot', opts);
+        return;
+    }
+
+    let opts = typeof m.options === 'function' ? m.options() : m.options;
+    let finalOpts = [...opts];
+    if(currentPath.length > 1 && key !== 'main') finalOpts.push({ id: 'back', label: '⬅️ Volver' }); 
+    addMessage(typeof m.title === 'function' ? m.title(userName) : m.title, 'bot', finalOpts);
+}
+
+function resetToMain() { currentPath = ['main']; showMenu('main'); } 
+
+/* --- 4. BUSCADOR INTELIGENTE IA (N8N) + BACKUP LOCAL --- */
+const FRASES = ["¡Bip bop! 🤖 Encontré esto:", "¡Acá tengo la info! ✨", "¡Búsqueda exitosa! 🐾", "¡Ya sé lo que buscás! 💡", "¡Eso era lo que buscabas! 🎯"];
+
+function buscarOpcionProfunda(texto) {
+    let t = normalizar(texto);
+    
+    // 1. Búsqueda por palabra clave fuerte
+    for (let clave in PALABRAS_CLAVE) {
+        if (t.includes(clave)) return PALABRAS_CLAVE[clave];
+    }
+
+    // 2. Filtramos palabras genéricas que rompen la búsqueda
+    const palabrasIgnoradas = ["quiero", "para", "como", "sacar", "pido", "turno", "turnos", "hacer", "necesito"];
+    const palabrasBuscadas = t.split(' ').filter(p => p.length > 3 && !palabrasIgnoradas.includes(p));
+    
+    for (let menuId in MENUS) {
+        const opciones = typeof MENUS[menuId].options === 'function' ? MENUS[menuId].options() : MENUS[menuId].options;
+        for (let i = 0; i < opciones.length; i++) {
+            const opt = opciones[i];
+            if (opt.id === 'back' || opt.id === 'full_menu') continue;
+            const labelNorm = normalizar(opt.label);
+            
+            if (labelNorm.includes(t)) return opt; 
+            for(let p of palabrasBuscadas) {
+                if(labelNorm.includes(p)) return opt;
+            }
+        }
+    }
+    return null;
+}
+
+// Búsqueda con N8N IA y respaldo local si N8N falla
+async function ejecutarBusquedaInteligente(texto) {
+    showTyping();
+    try {
+        const response = await fetch(WEBHOOK_N8N, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                tipo_accion: "chat", 
+                mensaje: texto, 
+                usuario: userName 
+            })
+        });
+        const data = await response.json();
+        
+        if (data.accion === 'texto') {
+            addMessage(data.texto, "bot", [{ id: 'main', label: '🏠 Ver Menú' }]);
+        } else if (data.accion === 'tarjeta' && RES[data.id]) {
+            addMessage(RES[data.id], "bot", [{ id: 'main', label: '🏠 Inicio' }]);
+        } else if (data.accion === 'menu') {
+            handleAction({ id: data.id, label: 'Buscando...' }); 
+        } else {
+            fallbackBusqueda(texto); // Respaldo local
+        }
+    } catch (error) {
+        console.warn("⚠️ N8N no respondió, usando buscador local:", error);
+        fallbackBusqueda(texto); // Respaldo local
+    }
+}
+
+function fallbackBusqueda(texto) {
+    const opcionEncontrada = buscarOpcionProfunda(texto);
+    if (opcionEncontrada) {
+        addMessage(FRASES[Math.floor(Math.random() * FRASES.length)], 'bot');
+        setTimeout(() => {
+            if (opcionEncontrada.apiKey) {
+                showTyping();
+                setTimeout(() => { addMessage(RES[opcionEncontrada.apiKey]); showNavControls(); }, 600);
+            } else if (opcionEncontrada.link) {
+                showTyping();
+                setTimeout(() => {
+                    addMessage(`Te dejo el acceso directo acá: <br><br><a href="${opcionEncontrada.link}" target="_blank" class="wa-btn">${opcionEncontrada.label}</a>`, 'bot');
+                    showNavControls();
+                }, 600);
+            } else if (MENUS[opcionEncontrada.id]) {
+                currentPath.push(opcionEncontrada.id);
+                showMenu(opcionEncontrada.id);
+            }
+        }, 500);
     } else {
+        setChasBotState();
+        addMessage(RES['error_busqueda'], "bot");
+    }
+}
+
+/* --- 5. REGISTRO (FLUJO LINEAL ESTRICTO) --- */
+function selectBarrio(b) {
+    userNeighborhood = b; 
+    localStorage.setItem('chas_user_neighborhood', b); 
+    
+    setTimeout(() => {
+        const edades = [{label:'-20', type:'age_select'}, {label:'20-40', type:'age_select'}, {label:'40-60', type:'age_select'}, {label:'+60', type:'age_select'}];
+        addMessage(`¡Excelente barrio <b>${userName}</b>! Por último, decime tu edad para ayudarte mejor:`, 'bot', edades);
+    }, 800);
+}
+
+function procesarEdadTexto(val) {
+    let numeros = val.match(/\d+/);
+    let edadNum = null;
+
+    if (numeros) {
+        edadNum = parseInt(numeros[0]);
+    } else {
+        const txt = normalizar(val);
+        const numMap = { 'uno':1, 'dos':2, 'tres':3, 'cuatro':4, 'cinco':5, 'seis':6, 'siete':7, 'ocho':8, 'nueve':9, 'diez':10, 'once':11, 'doce':12, 'trece':13, 'catorce':14, 'quince':15, 'dieciseis':16, 'diecisiete':17, 'dieciocho':18, 'diecinueve':19, 'veinte':20 };
+        for (let key in numMap) {
+            if (txt.includes(key) || txt === key) {
+                edadNum = numMap[key];
+                break;
+            }
+        }
+    }
+
+    if (edadNum !== null) {
+        if (edadNum < 20) userAge = '-20';
+        else if (edadNum <= 40) userAge = '20-40';
+        else if (edadNum <= 60) userAge = '40-60';
+        else userAge = '+60';
+
+        localStorage.setItem('chas_user_age', userAge); 
+        
         showTyping();
         setTimeout(() => {
-            addMessage(RES['error_busqueda'], "bot");
-        }, 600);
+            resetToMain();
+        }, 800);
+    } else {
+        addMessage(`Mmm, mi oído falló ahí. 🤔 Escribí tu edad con números (ej: 35) o elegí un botón:`, 'bot', [
+            {label:'-20', type:'age_select'}, 
+            {label:'20-40', type:'age_select'}, 
+            {label:'40-60', type:'age_select'}, 
+            {label:'+60', type:'age_select'}
+        ]);
     }
 }
 
+// --- BUCLE PRINCIPAL DE INPUT ---
 function processInput() {
-    const input = document.getElementById('userInput');
-    let val = input.value.trim(); 
-    if (!val || isBotThinking) return;
+    const input = document.getElementById('userInput'); const val = input.value.trim();
+    if(!val || isBotThinking) return; 
+
+    interaccionIniciada = true;
+
+    const validacion = validarTexto(val); 
+    if(!validacion.v) { addMessage(val, 'user'); input.value = ""; showTyping(); setTimeout(() => addMessage(validacion.m, 'bot'), 600); return; } 
 
     addMessage(val, 'user');
     input.value = "";
 
-    // Si todavía no registramos el nombre, lo tomamos y salimos
+    // 1. Onboarding
     if (!userName) {
-        registrarDato(val);
-        return;
-    } 
-    
-    // --- Chequeo del PIN ---
-    if (isAwaitingPin) {
-        isAwaitingPin = false; 
-        validarPinEnBaseDeDatos(val); 
+        userName = val;
+        localStorage.setItem('chas_user_name', userName);
+        showTyping();
+        setTimeout(() => addMessage(`¡Gusto conocerte <b>${userName}</b>! 👋 ¿De qué barrio sos?`, 'bot'), 800);
+        return; 
+    }
+    if (!userNeighborhood) {
+        const exacto = BARRIOS.find(x => normalizar(x) === normalizar(val));
+        const similares = BARRIOS.filter(x => normalizar(x).includes(normalizar(val))); 
+        
+        if(exacto) {
+            selectBarrio(exacto);
+        } else if(similares.length > 0 && normalizar(val).length > 2) {
+            addMessage("No lo encontré exacto. ¿Es alguno de estos?, tocá el botón correspondiente:", "bot", similares.map(s => ({label: s, type: 'barrio_select'})));
+        } else {
+            addMessage(`⚠️ No reconozco ese barrio. Por favor, escribilo de nuevo.`, 'bot'); 
+        }
+        return; 
+    }
+    if (!userAge) {
+        procesarEdadTexto(val);
         return; 
     }
 
-    // Búsqueda normal en el asistente
-    registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
-    ejecutarBusqueda(val);
+    // 2. IA
+    registrarEnPlanilla(val); 
+    ejecutarBusquedaInteligente(val); 
 }
 
-// --- LÓGICA DE NAVEGACIÓN Y BOTONES ---
-function handleAction(opt) {
-    if (opt.id === 'back') { 
-        currentPath.pop(); 
-        showMenu(currentPath[currentPath.length - 1]); 
-        return; 
-    }
-    if (opt.link) {
-        window.open(opt.link, '_blank');
-        return;
-    }
-    if (opt.id === 'licencias_area') {
-        currentPath.push(opt.id); 
-        buscarLicencias(currentPin);
-        return; 
-    }
-    if (opt.id === 'otras_licencias_dinamico') {
-        currentPath.push(opt.id);
-        buscarOtrasLicencias(currentPin); 
-        return; 
-    }
+/* --- GESTOR DE AGENDA DINÁMICA (GOOGLE SHEETS) --- */
+async function cargarAgendaDinamica() {
+    const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9D6xP_nenB_S-xlnMgAd9rBjY17-fGNiGrVnKgOvlQ3I23giB2VgCnN62JYRB6qX_cVEfpdx6g6k/pub?output=csv'; 
+    const SHEET_URL = `${BASE_URL}&t=${Date.now()}`;
 
-    if (opt.id === 'btn_pedir_pin') {
-        isAwaitingPin = true; 
-        addMessage(opt.label, 'user');
+    RES['agenda_dinamica'] = `<div class="info-card">⚠️ <b>Cargando agenda...</b><br>Si esto no cambia en unos segundos, revisá tu conexión.</div>`;
+
+    try {
+        const response = await fetch(SHEET_URL);
+        if (!response.ok) throw new Error("Error de conexión");
+        const data = await response.text();
+        const filas = data.split('\n').slice(1); 
+        if (filas.length < 1 || !data.includes(',')) throw new Error("Archivo vacío o formato incorrecto");
+
+        let htmlAgenda = '<div class="info-card"><strong>📅 AGENDA ACTUALIZADA</strong><br><i>En tiempo real</i><br><br>';
+        filas.forEach(fila => {
+            const cols = fila.split(','); 
+            if (cols.length >= 5) { 
+                const fecha = cols[0] ? cols[0].trim() : '';
+                const titulo = cols[1] ? cols[1].trim() : '';
+                const lugar = cols[2] ? cols[2].trim() : '';
+                const hora = cols[3] ? cols[3].trim() : '';
+                const precio = cols[4] ? cols[4].trim() : '';
+                const estado = cols[5] ? cols[5].trim() : 'Confirmado';
+
+                if (titulo) {
+                    let iconoEstado = '⚫'; 
+                    if (estado.toLowerCase().includes('cancelado')) iconoEstado = '🔴';
+                    if (estado.toLowerCase().includes('reprogramado')) iconoEstado = '🟠';
+
+                    htmlAgenda += `
+                        ${iconoEstado} <b>${fecha} - ${titulo}</b><br>
+                        📍 ${lugar} | ⏰ ${hora} | 🎟️ ${precio}<br>
+                        <hr style="border-top: 1px dashed #eee; margin: 8px 0;">
+                    `;
+                }
+            }
+        });
+        htmlAgenda += `<br><small><i>⚠️ Información sujeta a cambios.</i></small></div>`;
+        RES['agenda_dinamica'] = htmlAgenda;
+        return true; 
+    } catch (error) {
+        console.warn('⚠️ No se pudo cargar Google Sheets, usando Agenda Estática de respaldo.', error);
+        if (RES['agenda_actual']) {
+            RES['agenda_dinamica'] = RES['agenda_actual'];
+        } else {
+            RES['agenda_dinamica'] = `<div class="info-card">❌ <b>Info no disponible</b><br>Intentá más tarde.</div>`;
+        }
+        return false;
+    }
+}
+
+/* --- GESTOR DE ALERTAS METEOROLÓGICAS (GOOGLE SHEETS) --- */
+async function cargarAlertaClima() {
+    const BASE_ALERTA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTl9D6xP_nenB_S-xlnMgAd9rBjY17-fGNiGrVnKgOvlQ3I23giB2VgCnN62JYRB6qX_cVEfpdx6g6k/pub?gid=468896868&single=true&output=csv'; 
+    const ALERTA_URL = `${BASE_ALERTA_URL}&t=${Date.now()}&rnd=${Math.random()}`;
+
+    try {
+        const response = await fetch(ALERTA_URL, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
+        if (!response.ok) throw new Error("Error de conexión con Alertas");
+        const data = await response.text();
+        const filas = data.split('\n'); 
+        if (filas.length > 1 && data.includes(',')) {
+            const cols = filas[1].split(','); 
+            const estado = cols[0] ? cols[0].trim().toUpperCase() : 'INACTIVA';
+            const nivel = cols[1] ? cols[1].trim().toLowerCase() : 'amarilla';
+            let mensaje = cols.slice(2).join(',').trim();
+            if (mensaje.startsWith('"') && mensaje.endsWith('"')) mensaje = mensaje.slice(1, -1);
+            if (mensaje.endsWith('"\r')) mensaje = mensaje.slice(0, -2);
+            if (estado === 'ACTIVA' && mensaje !== '') mostrarAlerta(mensaje, nivel);
+            else cerrarAlerta(); 
+        }
+    } catch (error) {
+        console.warn('⚠️ No se pudo cargar el estado de la alerta meteorológica.', error);
+    }
+}
+
+// INICIALIZACIÓN
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarAgendaDinamica();
+    await cargarAlertaClima();
+
+    if (!userName) {
         showTyping();
         setTimeout(() => {
-            addMessage("🔒 Por favor, ingresá tu PIN numérico de acceso exclusivo:", "bot", [
-                { id: 'main', label: 'Cancelar' }
-            ]);
-        }, 800);
-        return; 
-    }
-
-    // Flujo normal
-    addMessage(opt.label, 'user');
-    showTyping();
-    
-    setTimeout(() => {
-        if (opt.type === 'submenu') {
-            currentPath.push(opt.id);
-            showMenu(opt.id);
-        } else if (opt.type === 'leaf' && opt.apiKey) {
-            currentPath.push(opt.id); 
-            const res = RES[opt.apiKey] || "Lo siento, la información no está disponible en este momento.";
-            addMessage(res, "bot", [{ id: 'back', label: '⬅️ Volver' }]);
-        } else if (MENUS[opt.id]) {
-            currentPath.push(opt.id);
-            showMenu(opt.id);
-        } else {
-            showMenu('main');
-        }
-    }, 800);
-}
-
-// --- VALIDACIÓN DE PIN EN LA NUBE ---
-async function validarPinEnBaseDeDatos(pin) {
-    addMessage("Validando credenciales...", "bot");
-    showTyping();
-
-    try {
-        const response = await fetch(`${URL_API_LICENCIAS}?action=validar&pin=${pin}`);
-        const data = await response.json();
-
-        if (data.valido === true) {
-            currentPin = pin; 
-            currentPath.push('menu_referentes_exclusivo');
-            showMenu('menu_referentes_exclusivo');
-        } else {
-            addMessage("❌ PIN incorrecto o no registrado.", "bot", [
-                { id: 'btn_pedir_pin', label: '🔄 Volver a intentar' },
-                { id: 'main', label: '⬅️ Volver al Inicio' }
-            ]);
-        }
-    } catch (error) {
-        console.error("Error al validar:", error);
-        addMessage("⚠️ Hubo un error de conexión al validar el PIN. Intentá de nuevo.", "bot", [
-            { id: 'btn_pedir_pin', label: '🔄 Volver a intentar' },
-            { id: 'main', label: '⬅️ Volver al Inicio' }
-        ]);
-    }
-}
-
-// --- BÚSQUEDA DINÁMICA DE LICENCIAS MEDICAS ---
-async function buscarLicencias(pin) {
-    addMessage("Buscando las licencias médicas actualizadas de tu área...", "bot");
-    showTyping();
-
-    try {
-        const response = await fetch(`${URL_API_LICENCIAS}?action=licencias&pin=${pin}`);
-        const data = await response.json();
-
-        if (data.length === 0) {
-            addMessage("No se encontraron licencias Médicas activas para tu área en este momento.", "bot", [
-                { id: 'back', label: '⬅️ Volver al panel' } 
-            ]);
-            return;
-        }
-
-        let htmlResultados = `<div class="info-card"><strong>📊 Licencias Médicas Activas</strong><br><br>`;
-        
-        data.forEach(lic => {
-            let semaforo = '⚪';
-            if (lic.estado.toLowerCase().includes('activa')) semaforo = '🟢';
-            if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
-            if (lic.estado.toLowerCase().includes('finalizada')) semaforo = '🔴';
-
-            htmlResultados += `
-                👤 <b>${lic.empleado}</b><br>
-                🏷️ Tipo: ${lic.tipo}<br>
-                📅 Desde: ${lic.inicio} | Hasta: ${lic.fin}<br>
-                ${semaforo} Estado: <b>${lic.estado}</b><br>
-                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
-            `;
-        });
-        htmlResultados += `</div>`;
-
-        addMessage(htmlResultados, "bot", [ { id: 'back', label: '⬅️ Volver al panel' } ]);
-
-    } catch (error) {
-        console.error("Error al traer las licencias:", error);
-        addMessage("Hubo un error de conexión con la base de datos de Medicina Laboral. Intentá de nuevo más tarde.", "bot", [
-            { id: 'back', label: '⬅️ Volver al panel' } 
-        ]);
-    }
-}
-
-// --- BÚSQUEDA DINÁMICA DE OTRAS LICENCIAS ---
-async function buscarOtrasLicencias(pin) {
-    addMessage("Buscando las licencias (Vacaciones, Maternidad, Artículos) de tu área...", "bot");
-    showTyping();
-
-    try {
-        const response = await fetch(`${URL_API_LICENCIAS}?action=otras_licencias&pin=${pin}`);
-        const data = await response.json();
-
-        if (data.length === 0) {
-            addMessage("No se encontraron otras licencias activas para tu área en este momento.", "bot", [
-                { id: 'back', label: '⬅️ Volver al panel' }
-            ]);
-            return;
-        }
-
-        let htmlResultados = `<div class="info-card"><strong>🌴 Otras Licencias Activas</strong><br><br>`;
-        
-        data.forEach(lic => {
-            let semaforo = '⚪';
-            if (lic.estado.toLowerCase().includes('activa')) semaforo = '🟢';
-            if (lic.estado.toLowerCase().includes('pendiente')) semaforo = '🟡';
-            if (lic.estado.toLowerCase().includes('finalizada')) semaforo = '🔴';
-
-            htmlResultados += `
-                👤 <b>${lic.empleado}</b><br>
-                🏷️ Tipo: ${lic.tipo}<br>
-                📅 Desde: ${lic.inicio} | Hasta: ${lic.fin}<br>
-                ${semaforo} Estado: <b>${lic.estado}</b><br>
-                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
-            `;
-        });
-        htmlResultados += `</div>`;
-
-        addMessage(htmlResultados, "bot", [ { id: 'back', label: '⬅️ Volver al panel' } ]);
-
-    } catch (error) {
-        console.error("Error al traer las licencias:", error);
-        addMessage("Hubo un error de conexión con la base de datos. Intentá de nuevo más tarde.", "bot", [
-            { id: 'back', label: '⬅️ Volver al panel' } 
-        ]);
-    }
-}
-
-// --- INICIALIZACIÓN ---
-document.addEventListener('DOMContentLoaded', () => {
-    if (!userName) {
-        addMessage("¡Hola! 👋 Bienvenido al Portal de Recursos Humanos. Para empezar, por favor escribí tu <b>Nombre Completo</b>:", "bot");
+            setChasBotState();
+            addMessage("👋 ¡Hola! Soy el asistente virtual de la Municipalidad de Chascomús. ¿Cómo te llamás?", "bot");
+        }, 500); 
     } else {
-        showMenu('main');
+        setChasBotState();
+        showTyping();
+        setTimeout(() => {
+            setChasBotState();
+            addMessage(`¡Hola de nuevo, <b>${userName}</b>! 👋 ¿En qué puedo ayudarte hoy?`, 'bot');
+            setTimeout(() => {
+                resetToMain();
+                setChasBotState();
+            }, 1000);
+        }, 1000);
     }
 
-    setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
-        if(splash) splash.classList.add('hidden');
-    }, 2000);
-    
     const sendBtn = document.getElementById('sendButton');
+    if (sendBtn) sendBtn.onclick = processInput; 
+    
     const userInput = document.getElementById('userInput');
-    
-    if(sendBtn) sendBtn.onclick = processInput;
-    if(userInput) {
-        userInput.addEventListener('keydown', (e) => { 
-            if (e.key === 'Enter') processInput(); 
-        });
+    if (userInput) {
+        userInput.onkeypress = (e) => { if(e.key === 'Enter') processInput(); };
     }
-    
-    let deferredPrompt; 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        const installBtn = document.getElementById('installBtn');
-        if (installBtn) {
-            installBtn.classList.remove('hidden');
-            installBtn.addEventListener('click', async () => {
-                installBtn.classList.add('hidden');
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            });
-        }
-    });
-
-    window.addEventListener('appinstalled', () => {
-        const installBtn = document.getElementById('installBtn');
-        if(installBtn) installBtn.classList.add('hidden');
-    });
 });
+
+function clearSession() { 
+    if(confirm("¿Reiniciar chat y borrar datos?")) { 
+        localStorage.clear(); 
+        location.reload(); 
+    } 
+}
+
+function abrirTarjeta() {
+    document.getElementById('menu-principal').style.display = 'none';
+    document.getElementById('vista-tarjeta').style.display = 'block';
+    history.pushState({ vista: 'tarjeta' }, "Tarjeta", "#tarjeta");
+}
+
+function cerrarTarjeta() {
+    document.getElementById('vista-tarjeta').style.display = 'none';
+    document.getElementById('menu-principal').style.display = 'block';
+}
+
+window.onpopstate = function(event) {
+    cerrarTarjeta();
+};
+
+let eventoInstalacion;
+const botonInstalar = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    eventoInstalacion = e;
+    if (botonInstalar) {
+        botonInstalar.classList.remove('hidden');
+    }
+});
+
+if (botonInstalar) {
+    botonInstalar.addEventListener('click', async () => {
+        if (!eventoInstalacion) return;
+        eventoInstalacion.prompt();
+        const { outcome } = await eventoInstalacion.userChoice;
+        if (outcome === 'accepted') {
+            botonInstalar.classList.add('hidden');
+        }
+        eventoInstalacion = null;
+    });
+}
+
+/* --- CONTROL DE ALERTAS METEOROLÓGICAS --- */
+function mostrarAlerta(mensaje, nivel = 'naranja') {
+    const banner = document.getElementById('weather-banner');
+    const texto = document.getElementById('weather-text');
+    if(texto) texto.innerHTML = mensaje;
+    if(banner) {
+        banner.className = `weather-banner ${nivel}`; 
+        banner.classList.remove('hidden');
+    }
+}
+
+function cerrarAlerta() {
+    const banner = document.getElementById('weather-banner');
+    if(banner) banner.classList.add('hidden');
+}
