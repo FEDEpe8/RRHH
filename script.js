@@ -7,10 +7,6 @@ let userName = localStorage.getItem('rrhh_user_name') || "";
 let currentPath = ['main'];
 let isBotThinking = false;
 let isAwaitingPin = false; 
-let isAwaitingDniRecibo = false;
-let isAwaitingLegajoRecibo = false;
-let currentDniRecibo = "";
-const URL_API_INTRANET = 'https://intranet.chascomus.gob.ar/api/recibos.php'; 
 const PIN_PRUEBA = ["1234"]; 
 let currentPin = ""; 
 const URL_API_LICENCIAS = 'https://script.google.com/macros/s/AKfycbz02VZfYKQ90GfrgmsqLZKdZeAu4T3ljDyzsEFP9gSEUAFpSe5hxCTmwJmSSiuc_WINxQ/exec';
@@ -56,7 +52,7 @@ const MENUS = {
     sueldos_menu: {
         title: () => '💰 Consultas de Haberes:',
         options: [
-            { id: 'recibo', label: '📄 Último Recibo y Extras' }, 
+            { id: 'recibo', label: '📄 Último Recibo y Extras', type: 'leaf', apiKey: 'info_recibos' }, 
             { id: 'info_sac', label: '💸 Información Aguinaldo', type: 'leaf', apiKey: 'info_sac' },
             { id: 'back', label: '⬅️ Volver' }
         ]
@@ -142,8 +138,7 @@ const RES = {
             Aquí podrás consultar información relacionada con tu aguinaldo.<br><br>
             📅 <b>Primer Medio Aguinaldo (Junio):</b> Suele acreditarse entre el 23 y el 27 de junio.<br>
             📅 <b>Segundo Medio Aguinaldo (Diciembre):</b> Generalmente se deposita alrededor del 20 de diciembre.<br>
-            📌 <b>Acreditación:</b> Gracias al uso de <b>FONDOS PROPIOS</b>, el municipio <b>ASEGURA</b> el depósito antes de que termine el mes.<br>
-            📎 <b>Intranet:</b> <a href="https://intranet.chascomus.gob.ar" target="_blank" class="wa-btn">📤 Ingresar a la Intranet</a>
+            📌 <b>Acreditación:</b> Gracias al uso de <b>FONDOS PROPIOS</b>, el municipio <b>ASEGURA</b> el depósito antes de que termine el mes.
         </div>`,
 
     'info_escolaridad': `
@@ -216,9 +211,9 @@ const RES = {
 const PALABRAS_CLAVE = {
     'rrhh': { id: 'main', label: '👥 Recursos Humanos' },
     'menu': { id: 'main', label: '🏠 Menú Principal' },
-    'recibo': { id: 'sueldos_menu', label: '📄 Recibos de Sueldo' },
-    'extras': { id: 'sueldos_menu', label: '📄 Extras' },
-    'liquidacion': { id: 'sueldos_menu', label: '📄 Liquidaciones' },
+    'recibo': { apiKey: 'info_recibos', label: '📄 Recibos de Sueldo' },
+    'extras': { apiKey: 'info_recibos', label: '📄 Extras' },
+    'liquidacion': { apiKey: 'info_recibos', label: '📄 Liquidaciones' },
     'sueldo': { id: 'sueldos_menu', label: '💰 Sueldos' },
     'aguinaldo': { apiKey: 'info_sac', label: '💰 Aguinaldo' },
     'sac': { apiKey: 'info_sac', label: '💰 SAC' },
@@ -393,33 +388,6 @@ function processInput() {
         return; 
     }
 
-    // --- Chequeo de DNI para Recibo ---
-    if (isAwaitingDniRecibo) {
-        currentDniRecibo = val.replace(/\./g, '').replace(/\s/g, ''); 
-        
-        if (currentDniRecibo.length < 5) {
-             addMessage("❌ Ese número parece muy corto. Por favor, ingresá un DNI válido (sin puntos):", "bot", [
-                { id: 'sueldos_menu', label: 'Cancelar' }
-            ]);
-            return;
-        }
-
-        isAwaitingDniRecibo = false;
-        isAwaitingLegajoRecibo = true; 
-        addMessage("🔢 Perfecto. Ahora ingresá tu número de **Legajo**:", "bot", [
-            { id: 'sueldos_menu', label: 'Cancelar' }
-        ]);
-        return; 
-    }
-
-    // --- Chequeo de Legajo para Recibo ---
-    if (isAwaitingLegajoRecibo) {
-        let legajoLimpio = val.replace(/\s/g, '');
-        isAwaitingLegajoRecibo = false;
-        consultarReciboIntranet(currentDniRecibo, legajoLimpio); 
-        return; 
-    }
-
     // Búsqueda normal en el asistente
     registrarEnPlanilla('Búsqueda de Texto: Buscó "' + val + '"'); 
     ejecutarBusqueda(val);
@@ -447,18 +415,6 @@ function handleAction(opt) {
         return; 
     }
 
-    if (opt.id === 'recibo') {
-        isAwaitingDniRecibo = true; 
-        addMessage(opt.label, 'user');
-        showTyping();
-        setTimeout(() => {
-            addMessage("👤 Por favor, ingresá tu número de **DNI** (sin puntos) para validar tu identidad:", "bot", [
-                { id: 'sueldos_menu', label: 'Cancelar' }
-            ]);
-        }, 800);
-        return;
-    }
-    
     if (opt.id === 'btn_pedir_pin') {
         isAwaitingPin = true; 
         addMessage(opt.label, 'user');
@@ -604,42 +560,6 @@ async function buscarOtrasLicencias(pin) {
         console.error("Error al traer las licencias:", error);
         addMessage("Hubo un error de conexión con la base de datos. Intentá de nuevo más tarde.", "bot", [
             { id: 'back', label: '⬅️ Volver al panel' } 
-        ]);
-    }
-}
-
-// --- BÚSQUEDA DINÁMICA DE RECIBOS EN INTRANET (VÍA PHP SEGURO) ---
-async function consultarReciboIntranet(dni, legajo) {
-    addMessage("Validando identidad y buscando recibos...", "bot");
-    showTyping();
-
-    try {
-        const response = await fetch(`${URL_API_INTRANET}?action=consultar&dni=${dni}&legajo=${legajo}`);
-        const data = await response.json();
-
-        if (data.exito === true) {
-            let htmlRecibo = `
-                <div class="info-card">
-                    <strong>📄 Último Recibo de Sueldo</strong><br><br>
-                    📅 <b>Período liquidado:</b> ${data.periodo}<br>
-                    <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
-                    <a href="${data.link_descarga}" target="_blank" class="wa-btn" style="background-color: var(--primary) !important; text-align: center; display: block;">
-                        🔒 Ver / Descargar PDF
-                    </a>
-                </div>
-            `;
-            addMessage(htmlRecibo, "bot", [{ id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }]);
-        } else {
-            addMessage(`❌ ${data.mensaje}`, "bot", [
-                { id: 'recibo', label: '🔄 Volver a intentar' },
-                { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
-            ]);
-        }
-    } catch (error) {
-        console.error("Error al consultar recibo:", error);
-        addMessage("⚠️ Hubo un error de conexión con el servidor. Intentá de nuevo más tarde.", "bot", [
-            { id: 'recibo', label: '🔄 Volver a intentar' },
-            { id: 'sueldos_menu', label: '⬅️ Volver a Sueldos' }
         ]);
     }
 }
