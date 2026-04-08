@@ -179,7 +179,7 @@ const RES = {
             <b>Alimentos:</b><br>
             🛒SuperChas (en sus 3 sucursales)<br>
             🍝Pastas La Bianca<br>🛒Almacén de Descuentos<br>🥗Verduleria y fiambreria “Santa Elena”.<br>
-            <b>Gastronomía</b><br>🍝La Fonda<br>🍜La Roti<br>🍕Il Formagio<br>
+            <b>Gastronomía</b><br>🍝La Fonda<br>🍜La Roti<br>🍕Il Formagio<br>🍕 Pizzeria Pumm
             <b>Carnicería</b><br>🥩La Carniceria<br>
             <b>Heladerías</b><br>🍧Grido (en sus dos direcciones)<br>🍨Brinato<br>
             <b>Belleza y bienestar</b><br>💇🏻‍♀️Lion Peluqueria<br>💇Multiespacio Capilar<br>🧴Ana Chrestia Cosmiatra<br>💈Peluquería Ídolos<br>
