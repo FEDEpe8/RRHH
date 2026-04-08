@@ -173,19 +173,23 @@ const RES = {
             <i>Recordá llevar certificado con diagnóstico y días de reposo.</i>
         </div>`,
 
-    'info_soy_municipal': `
+      'info_soy_municipal': `
         <div class="info-card">
-            <strong>🛍️ Locales Adheridos - Soy Municipal</strong><br><br>
-            <b>Alimentos:</b> SuperChas, Pastas La Bianca, Almacén de Descuentos, Verduleria Santa Elena.<br>
-            <b>Gastronomía:</b> La Fonda, La Roti, Il Formagio.<br>
-            <b>Carnicería:</b> La Carniceria.<br>
-            <b>Heladerías:</b> Grido, Brinato.<br>
-            <b>Belleza:</b> Lion Peluqueria, Multiespacio Capilar, Ana Chrestia, Peluquería Ídolos.<br>
-            <b>Indumentaria:</b> Vado Di Piu, Stock Calzados, Bumerang, Indulab.<br>
-            <b>Educación:</b> Join In, Universidad Siglo XXI.<br>
-            <b>Servicios y Hogar:</b> Imprenta El Rayo, Corralon el Chaqueño, Pintureria Alvear, La casa del Tornillo, Chiquilandia.
+            <strong>🛍️ Locales Adheridos al Programa Soy Municipal</strong><br><br>
+            <b>Alimentos:</b><br>
+            🛒SuperChas (en sus 3 sucursales)<br>
+            🍝Pastas La Bianca<br>🛒Almacén de Descuentos<br>🥗Verduleria y fiambreria “Santa Elena”.<br>
+            <b>Gastronomía</b><br>🍝La Fonda<br>🍜La Roti<br>🍕Il Formagio<br>
+            <b>Carnicería</b><br>🥩La Carniceria<br>
+            <b>Heladerías</b><br>🍧Grido (en sus dos direcciones)<br>🍨Brinato<br>
+            <b>Belleza y bienestar</b><br>💇🏻‍♀️Lion Peluqueria<br>💇Multiespacio Capilar<br>🧴Ana Chrestia Cosmiatra<br>💈Peluquería Ídolos<br>
+            <b>Indumentaria</b><br>👗Vado Di Piu<br>👠Stock Calzados<br>👔Bumerang<br>🦺Indulab<br>
+            <b>Educación</b><br>💂🏼‍♂️Join In, school of English<br>2️⃣1️⃣Universidad Siglo XXI<br>
+            <b>Aire Libre</b><br>🏕️Camping Camino del Sol<br>
+            <b>Servicios</b><br>🖨️Imprenta El Rayo<br>⚰️Funeraria Portela<br>
+            <b>Hogar y construcción</b><br>🧱Corralon el Chaqueño<br>🫟Pintureria Alvear<br>🔩La casa del Tornillo<br>
+            <b>Juguetería y Librería</b><br>🪁Chiquilandia<br>
         </div>`,
-
     'info_acceder': `
         <div class="info-card">
             <strong>🎁 Beneficios Soy Municipal</strong><br>
